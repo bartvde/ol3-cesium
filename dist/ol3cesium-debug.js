@@ -1,6 +1,6 @@
 // Ol3-Cesium. See https://github.com/openlayers/ol3-cesium/
 // License: https://github.com/openlayers/ol3-cesium/blob/master/LICENSE
-// Version: v1.7-61-ge373428
+// Version: v1.8-1-g2e8c976
 
 var CLOSURE_NO_DEPS = true;
 // Copyright 2006 The Closure Library Authors. All Rights Reserved.
@@ -24001,7 +24001,8 @@ goog.require('olcs.core');
 
 goog.exportSymbol(
     'olcs.AbstractSynchronizer',
-    olcs.AbstractSynchronizer);
+    olcs.AbstractSynchronizer,
+    OL3CESIUM);
 
 goog.exportProperty(
     olcs.AbstractSynchronizer.prototype,
@@ -24010,7 +24011,8 @@ goog.exportProperty(
 
 goog.exportSymbol(
     'olcs.Camera',
-    olcs.Camera);
+    olcs.Camera,
+    OL3CESIUM);
 
 goog.exportProperty(
     olcs.Camera.prototype,
@@ -24089,75 +24091,93 @@ goog.exportProperty(
 
 goog.exportSymbol(
     'olcs.core.computePixelSizeAtCoordinate',
-    olcs.core.computePixelSizeAtCoordinate);
+    olcs.core.computePixelSizeAtCoordinate,
+    OL3CESIUM);
 
 goog.exportSymbol(
     'olcs.core.applyHeightOffsetToGeometry',
-    olcs.core.applyHeightOffsetToGeometry);
+    olcs.core.applyHeightOffsetToGeometry,
+    OL3CESIUM);
 
 goog.exportSymbol(
     'olcs.core.rotateAroundAxis',
-    olcs.core.rotateAroundAxis);
+    olcs.core.rotateAroundAxis,
+    OL3CESIUM);
 
 goog.exportSymbol(
     'olcs.core.setHeadingUsingBottomCenter',
-    olcs.core.setHeadingUsingBottomCenter);
+    olcs.core.setHeadingUsingBottomCenter,
+    OL3CESIUM);
 
 goog.exportSymbol(
     'olcs.core.pickOnTerrainOrEllipsoid',
-    olcs.core.pickOnTerrainOrEllipsoid);
+    olcs.core.pickOnTerrainOrEllipsoid,
+    OL3CESIUM);
 
 goog.exportSymbol(
     'olcs.core.pickBottomPoint',
-    olcs.core.pickBottomPoint);
+    olcs.core.pickBottomPoint,
+    OL3CESIUM);
 
 goog.exportSymbol(
     'olcs.core.pickCenterPoint',
-    olcs.core.pickCenterPoint);
+    olcs.core.pickCenterPoint,
+    OL3CESIUM);
 
 goog.exportSymbol(
     'olcs.core.computeSignedTiltAngleOnGlobe',
-    olcs.core.computeSignedTiltAngleOnGlobe);
+    olcs.core.computeSignedTiltAngleOnGlobe,
+    OL3CESIUM);
 
 goog.exportSymbol(
     'olcs.core.computeAngleToZenith',
-    olcs.core.computeAngleToZenith);
+    olcs.core.computeAngleToZenith,
+    OL3CESIUM);
 
 goog.exportSymbol(
     'olcs.core.lookAt',
-    olcs.core.lookAt);
+    olcs.core.lookAt,
+    OL3CESIUM);
 
 goog.exportSymbol(
     'olcs.core.extentToRectangle',
-    olcs.core.extentToRectangle);
+    olcs.core.extentToRectangle,
+    OL3CESIUM);
 
 goog.exportSymbol(
     'olcs.core.tileLayerToImageryLayer',
-    olcs.core.tileLayerToImageryLayer);
+    olcs.core.tileLayerToImageryLayer,
+    OL3CESIUM);
 
 goog.exportSymbol(
     'olcs.core.updateCesiumLayerProperties',
-    olcs.core.updateCesiumLayerProperties);
+    olcs.core.updateCesiumLayerProperties,
+    OL3CESIUM);
 
 goog.exportSymbol(
     'olcs.core.ol4326CoordinateToCesiumCartesian',
-    olcs.core.ol4326CoordinateToCesiumCartesian);
+    olcs.core.ol4326CoordinateToCesiumCartesian,
+    OL3CESIUM);
 
 goog.exportSymbol(
     'olcs.core.ol4326CoordinateArrayToCsCartesians',
-    olcs.core.ol4326CoordinateArrayToCsCartesians);
+    olcs.core.ol4326CoordinateArrayToCsCartesians,
+    OL3CESIUM);
 
 goog.exportSymbol(
     'olcs.core.olGeometryCloneTo4326',
-    olcs.core.olGeometryCloneTo4326);
+    olcs.core.olGeometryCloneTo4326,
+    OL3CESIUM);
 
 goog.exportSymbol(
     'olcs.core.convertColorToCesium',
-    olcs.core.convertColorToCesium);
+    olcs.core.convertColorToCesium,
+    OL3CESIUM);
 
 goog.exportSymbol(
     'olcs.DragBox',
-    olcs.DragBox);
+    olcs.DragBox,
+    OL3CESIUM);
 
 goog.exportProperty(
     olcs.DragBox.prototype,
@@ -24171,7 +24191,8 @@ goog.exportProperty(
 
 goog.exportSymbol(
     'olcs.FeatureConverter',
-    olcs.FeatureConverter);
+    olcs.FeatureConverter,
+    OL3CESIUM);
 
 goog.exportProperty(
     olcs.FeatureConverter.prototype,
@@ -24240,7 +24261,8 @@ goog.exportProperty(
 
 goog.exportSymbol(
     'olcs.OLCesium',
-    olcs.OLCesium);
+    olcs.OLCesium,
+    OL3CESIUM);
 
 goog.exportProperty(
     olcs.OLCesium.prototype,
@@ -24279,8 +24301,10 @@ goog.exportProperty(
 
 goog.exportSymbol(
     'olcs.RasterSynchronizer',
-    olcs.RasterSynchronizer);
+    olcs.RasterSynchronizer,
+    OL3CESIUM);
 
 goog.exportSymbol(
     'olcs.VectorSynchronizer',
-    olcs.VectorSynchronizer);
+    olcs.VectorSynchronizer,
+    OL3CESIUM);

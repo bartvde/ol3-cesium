@@ -15,6 +15,19 @@ var generateExports = require('./generate-exports');
 var log = closure.log;
 var root = path.join(__dirname, '..');
 
+var umdWrapper = '(function (root, factory) {\n' +
+    '  if (typeof exports === "object") {\n' +
+    '    module.exports = factory();\n' +
+    '  } else if (typeof define === "function" && define.amd) {\n' +
+    '    define([], factory);\n' +
+    '  } else {\n' +
+    '    root.olcs = factory();\n' +
+    '  }\n' +
+    '}(this, function () {\n' +
+    '  var OL3CESIUM = {};\n' +
+    '  %output%\n' +
+    '  return OL3CESIUM.olcs;\n' +
+    '}));\n';
 
 /**
  * Assert that a provided config object is valid.
@@ -42,6 +55,10 @@ function assertValidConfig(config, callback) {
     if (config.src && !Array.isArray(config.src)) {
       callback(new Error('Config "src" must be an array'));
       return;
+    }
+    config.namespace = 'OL3CESIUM';
+    if (config.compile) {
+      config.compile.output_wrapper = umdWrapper;
     }
     callback(null);
   });
