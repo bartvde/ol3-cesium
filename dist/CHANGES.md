@@ -1,5 +1,28 @@
 # Changelog
 
+## v1.9 - 2015-10-22
+
+* Breaking changes
+  * Port to OL 3.10.1, remove saturation, gamma and hue functions.
+  * Change `olcs.AbstractSynchronizer.prototype.createSingleCounterpart` to
+    return an array of counterparts instead of a unique object. This allows
+    one OL3 layer to be transformed in several Cesium layers.
+  * Rename `olcs.AbstractSynchronizer.prototype.createSingleCounterpart` to
+    `olcs.AbstractSynchronizer.prototype.createSingleLayerCounterparts`.
+  * Rename `olcs.RasterSynchronizer.prototype.convertLayerToCesiumImagery` to
+    `olcs.RasterSynchronizer.prototype.convertLayerToCesiumImageries`.
+
+* Changes
+  * Add `olcs.OLCesium.setResolutionScale` to allow improving performance at
+    the cost of quality.
+  * Automatically use device pixel ratio to configure the Webgl 3D globe.
+  * Add the experimental method `olcs.OLCesium.enableAutoRenderLoop` to stop
+    rendering the globe when idle. This is based on work from Kevin Ring.
+  * Port to Cesium 1.14.
+  * The `olcs.AbstractSynchronizer` now tries to synchronize the layer groups.
+    Only if null is returned will it synchronize each of its children. This
+    allows more synchronization strategies in user applications.
+
 ## v1.8 - 2015-09-10
 
 * Breaking changes

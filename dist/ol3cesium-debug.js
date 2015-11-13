@@ -1,6 +1,6 @@
 // Ol3-Cesium. See https://github.com/openlayers/ol3-cesium/
 // License: https://github.com/openlayers/ol3-cesium/blob/master/LICENSE
-// Version: v1.8-1-g2e8c976
+// Version: v1.8-94-g12deda0
 
 var CLOSURE_NO_DEPS = true;
 // Copyright 2006 The Closure Library Authors. All Rights Reserved.
@@ -2516,6 +2516,1253 @@ goog.tagUnsealableClass = function(ctr) {
  */
 goog.UNSEALABLE_CONSTRUCTOR_PROPERTY_ = 'goog_defineClass_legacy_unsealable';
 
+// Copyright 2006 The Closure Library Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS-IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+/**
+ * @fileoverview Utilities for manipulating objects/maps/hashes.
+ * @author arv@google.com (Erik Arvidsson)
+ */
+
+goog.provide('goog.object');
+
+
+/**
+ * Calls a function for each element in an object/map/hash.
+ *
+ * @param {Object<K,V>} obj The object over which to iterate.
+ * @param {function(this:T,V,?,Object<K,V>):?} f The function to call
+ *     for every element. This function takes 3 arguments (the value, the
+ *     key and the object) and the return value is ignored.
+ * @param {T=} opt_obj This is used as the 'this' object within f.
+ * @template T,K,V
+ */
+goog.object.forEach = function(obj, f, opt_obj) {
+  for (var key in obj) {
+    f.call(opt_obj, obj[key], key, obj);
+  }
+};
+
+
+/**
+ * Calls a function for each element in an object/map/hash. If that call returns
+ * true, adds the element to a new object.
+ *
+ * @param {Object<K,V>} obj The object over which to iterate.
+ * @param {function(this:T,V,?,Object<K,V>):boolean} f The function to call
+ *     for every element. This
+ *     function takes 3 arguments (the value, the key and the object)
+ *     and should return a boolean. If the return value is true the
+ *     element is added to the result object. If it is false the
+ *     element is not included.
+ * @param {T=} opt_obj This is used as the 'this' object within f.
+ * @return {!Object<K,V>} a new object in which only elements that passed the
+ *     test are present.
+ * @template T,K,V
+ */
+goog.object.filter = function(obj, f, opt_obj) {
+  var res = {};
+  for (var key in obj) {
+    if (f.call(opt_obj, obj[key], key, obj)) {
+      res[key] = obj[key];
+    }
+  }
+  return res;
+};
+
+
+/**
+ * For every element in an object/map/hash calls a function and inserts the
+ * result into a new object.
+ *
+ * @param {Object<K,V>} obj The object over which to iterate.
+ * @param {function(this:T,V,?,Object<K,V>):R} f The function to call
+ *     for every element. This function
+ *     takes 3 arguments (the value, the key and the object)
+ *     and should return something. The result will be inserted
+ *     into a new object.
+ * @param {T=} opt_obj This is used as the 'this' object within f.
+ * @return {!Object<K,R>} a new object with the results from f.
+ * @template T,K,V,R
+ */
+goog.object.map = function(obj, f, opt_obj) {
+  var res = {};
+  for (var key in obj) {
+    res[key] = f.call(opt_obj, obj[key], key, obj);
+  }
+  return res;
+};
+
+
+/**
+ * Calls a function for each element in an object/map/hash. If any
+ * call returns true, returns true (without checking the rest). If
+ * all calls return false, returns false.
+ *
+ * @param {Object<K,V>} obj The object to check.
+ * @param {function(this:T,V,?,Object<K,V>):boolean} f The function to
+ *     call for every element. This function
+ *     takes 3 arguments (the value, the key and the object) and should
+ *     return a boolean.
+ * @param {T=} opt_obj This is used as the 'this' object within f.
+ * @return {boolean} true if any element passes the test.
+ * @template T,K,V
+ */
+goog.object.some = function(obj, f, opt_obj) {
+  for (var key in obj) {
+    if (f.call(opt_obj, obj[key], key, obj)) {
+      return true;
+    }
+  }
+  return false;
+};
+
+
+/**
+ * Calls a function for each element in an object/map/hash. If
+ * all calls return true, returns true. If any call returns false, returns
+ * false at this point and does not continue to check the remaining elements.
+ *
+ * @param {Object<K,V>} obj The object to check.
+ * @param {?function(this:T,V,?,Object<K,V>):boolean} f The function to
+ *     call for every element. This function
+ *     takes 3 arguments (the value, the key and the object) and should
+ *     return a boolean.
+ * @param {T=} opt_obj This is used as the 'this' object within f.
+ * @return {boolean} false if any element fails the test.
+ * @template T,K,V
+ */
+goog.object.every = function(obj, f, opt_obj) {
+  for (var key in obj) {
+    if (!f.call(opt_obj, obj[key], key, obj)) {
+      return false;
+    }
+  }
+  return true;
+};
+
+
+/**
+ * Returns the number of key-value pairs in the object map.
+ *
+ * @param {Object} obj The object for which to get the number of key-value
+ *     pairs.
+ * @return {number} The number of key-value pairs in the object map.
+ */
+goog.object.getCount = function(obj) {
+  // JS1.5 has __count__ but it has been deprecated so it raises a warning...
+  // in other words do not use. Also __count__ only includes the fields on the
+  // actual object and not in the prototype chain.
+  var rv = 0;
+  for (var key in obj) {
+    rv++;
+  }
+  return rv;
+};
+
+
+/**
+ * Returns one key from the object map, if any exists.
+ * For map literals the returned key will be the first one in most of the
+ * browsers (a know exception is Konqueror).
+ *
+ * @param {Object} obj The object to pick a key from.
+ * @return {string|undefined} The key or undefined if the object is empty.
+ */
+goog.object.getAnyKey = function(obj) {
+  for (var key in obj) {
+    return key;
+  }
+};
+
+
+/**
+ * Returns one value from the object map, if any exists.
+ * For map literals the returned value will be the first one in most of the
+ * browsers (a know exception is Konqueror).
+ *
+ * @param {Object<K,V>} obj The object to pick a value from.
+ * @return {V|undefined} The value or undefined if the object is empty.
+ * @template K,V
+ */
+goog.object.getAnyValue = function(obj) {
+  for (var key in obj) {
+    return obj[key];
+  }
+};
+
+
+/**
+ * Whether the object/hash/map contains the given object as a value.
+ * An alias for goog.object.containsValue(obj, val).
+ *
+ * @param {Object<K,V>} obj The object in which to look for val.
+ * @param {V} val The object for which to check.
+ * @return {boolean} true if val is present.
+ * @template K,V
+ */
+goog.object.contains = function(obj, val) {
+  return goog.object.containsValue(obj, val);
+};
+
+
+/**
+ * Returns the values of the object/map/hash.
+ *
+ * @param {Object<K,V>} obj The object from which to get the values.
+ * @return {!Array<V>} The values in the object/map/hash.
+ * @template K,V
+ */
+goog.object.getValues = function(obj) {
+  var res = [];
+  var i = 0;
+  for (var key in obj) {
+    res[i++] = obj[key];
+  }
+  return res;
+};
+
+
+/**
+ * Returns the keys of the object/map/hash.
+ *
+ * @param {Object} obj The object from which to get the keys.
+ * @return {!Array<string>} Array of property keys.
+ */
+goog.object.getKeys = function(obj) {
+  var res = [];
+  var i = 0;
+  for (var key in obj) {
+    res[i++] = key;
+  }
+  return res;
+};
+
+
+/**
+ * Get a value from an object multiple levels deep.  This is useful for
+ * pulling values from deeply nested objects, such as JSON responses.
+ * Example usage: getValueByKeys(jsonObj, 'foo', 'entries', 3)
+ *
+ * @param {!Object} obj An object to get the value from.  Can be array-like.
+ * @param {...(string|number|!Array<number|string>)} var_args A number of keys
+ *     (as strings, or numbers, for array-like objects).  Can also be
+ *     specified as a single array of keys.
+ * @return {*} The resulting value.  If, at any point, the value for a key
+ *     is undefined, returns undefined.
+ */
+goog.object.getValueByKeys = function(obj, var_args) {
+  var isArrayLike = goog.isArrayLike(var_args);
+  var keys = isArrayLike ? var_args : arguments;
+
+  // Start with the 2nd parameter for the variable parameters syntax.
+  for (var i = isArrayLike ? 0 : 1; i < keys.length; i++) {
+    obj = obj[keys[i]];
+    if (!goog.isDef(obj)) {
+      break;
+    }
+  }
+
+  return obj;
+};
+
+
+/**
+ * Whether the object/map/hash contains the given key.
+ *
+ * @param {Object} obj The object in which to look for key.
+ * @param {*} key The key for which to check.
+ * @return {boolean} true If the map contains the key.
+ */
+goog.object.containsKey = function(obj, key) {
+  return key in obj;
+};
+
+
+/**
+ * Whether the object/map/hash contains the given value. This is O(n).
+ *
+ * @param {Object<K,V>} obj The object in which to look for val.
+ * @param {V} val The value for which to check.
+ * @return {boolean} true If the map contains the value.
+ * @template K,V
+ */
+goog.object.containsValue = function(obj, val) {
+  for (var key in obj) {
+    if (obj[key] == val) {
+      return true;
+    }
+  }
+  return false;
+};
+
+
+/**
+ * Searches an object for an element that satisfies the given condition and
+ * returns its key.
+ * @param {Object<K,V>} obj The object to search in.
+ * @param {function(this:T,V,string,Object<K,V>):boolean} f The
+ *      function to call for every element. Takes 3 arguments (the value,
+ *     the key and the object) and should return a boolean.
+ * @param {T=} opt_this An optional "this" context for the function.
+ * @return {string|undefined} The key of an element for which the function
+ *     returns true or undefined if no such element is found.
+ * @template T,K,V
+ */
+goog.object.findKey = function(obj, f, opt_this) {
+  for (var key in obj) {
+    if (f.call(opt_this, obj[key], key, obj)) {
+      return key;
+    }
+  }
+  return undefined;
+};
+
+
+/**
+ * Searches an object for an element that satisfies the given condition and
+ * returns its value.
+ * @param {Object<K,V>} obj The object to search in.
+ * @param {function(this:T,V,string,Object<K,V>):boolean} f The function
+ *     to call for every element. Takes 3 arguments (the value, the key
+ *     and the object) and should return a boolean.
+ * @param {T=} opt_this An optional "this" context for the function.
+ * @return {V} The value of an element for which the function returns true or
+ *     undefined if no such element is found.
+ * @template T,K,V
+ */
+goog.object.findValue = function(obj, f, opt_this) {
+  var key = goog.object.findKey(obj, f, opt_this);
+  return key && obj[key];
+};
+
+
+/**
+ * Whether the object/map/hash is empty.
+ *
+ * @param {Object} obj The object to test.
+ * @return {boolean} true if obj is empty.
+ */
+goog.object.isEmpty = function(obj) {
+  for (var key in obj) {
+    return false;
+  }
+  return true;
+};
+
+
+/**
+ * Removes all key value pairs from the object/map/hash.
+ *
+ * @param {Object} obj The object to clear.
+ */
+goog.object.clear = function(obj) {
+  for (var i in obj) {
+    delete obj[i];
+  }
+};
+
+
+/**
+ * Removes a key-value pair based on the key.
+ *
+ * @param {Object} obj The object from which to remove the key.
+ * @param {*} key The key to remove.
+ * @return {boolean} Whether an element was removed.
+ */
+goog.object.remove = function(obj, key) {
+  var rv;
+  if ((rv = key in obj)) {
+    delete obj[key];
+  }
+  return rv;
+};
+
+
+/**
+ * Adds a key-value pair to the object. Throws an exception if the key is
+ * already in use. Use set if you want to change an existing pair.
+ *
+ * @param {Object<K,V>} obj The object to which to add the key-value pair.
+ * @param {string} key The key to add.
+ * @param {V} val The value to add.
+ * @template K,V
+ */
+goog.object.add = function(obj, key, val) {
+  if (key in obj) {
+    throw Error('The object already contains the key "' + key + '"');
+  }
+  goog.object.set(obj, key, val);
+};
+
+
+/**
+ * Returns the value for the given key.
+ *
+ * @param {Object<K,V>} obj The object from which to get the value.
+ * @param {string} key The key for which to get the value.
+ * @param {R=} opt_val The value to return if no item is found for the given
+ *     key (default is undefined).
+ * @return {V|R|undefined} The value for the given key.
+ * @template K,V,R
+ */
+goog.object.get = function(obj, key, opt_val) {
+  if (key in obj) {
+    return obj[key];
+  }
+  return opt_val;
+};
+
+
+/**
+ * Adds a key-value pair to the object/map/hash.
+ *
+ * @param {Object<K,V>} obj The object to which to add the key-value pair.
+ * @param {string} key The key to add.
+ * @param {V} value The value to add.
+ * @template K,V
+ */
+goog.object.set = function(obj, key, value) {
+  obj[key] = value;
+};
+
+
+/**
+ * Adds a key-value pair to the object/map/hash if it doesn't exist yet.
+ *
+ * @param {Object<K,V>} obj The object to which to add the key-value pair.
+ * @param {string} key The key to add.
+ * @param {V} value The value to add if the key wasn't present.
+ * @return {V} The value of the entry at the end of the function.
+ * @template K,V
+ */
+goog.object.setIfUndefined = function(obj, key, value) {
+  return key in obj ? obj[key] : (obj[key] = value);
+};
+
+
+/**
+ * Sets a key and value to an object if the key is not set. The value will be
+ * the return value of the given function. If the key already exists, the
+ * object will not be changed and the function will not be called (the function
+ * will be lazily evaluated -- only called if necessary).
+ *
+ * This function is particularly useful for use with a map used a as a cache.
+ *
+ * @param {!Object<K,V>} obj The object to which to add the key-value pair.
+ * @param {string} key The key to add.
+ * @param {function():V} f The value to add if the key wasn't present.
+ * @return {V} The value of the entry at the end of the function.
+ * @template K,V
+ */
+goog.object.setWithReturnValueIfNotSet = function(obj, key, f) {
+  if (key in obj) {
+    return obj[key];
+  }
+
+  var val = f();
+  obj[key] = val;
+  return val;
+};
+
+
+/**
+ * Compares two objects for equality using === on the values.
+ *
+ * @param {!Object<K,V>} a
+ * @param {!Object<K,V>} b
+ * @return {boolean}
+ * @template K,V
+ */
+goog.object.equals = function(a, b) {
+  for (var k in a) {
+    if (!(k in b) || a[k] !== b[k]) {
+      return false;
+    }
+  }
+  for (var k in b) {
+    if (!(k in a)) {
+      return false;
+    }
+  }
+  return true;
+};
+
+
+/**
+ * Does a flat clone of the object.
+ *
+ * @param {Object<K,V>} obj Object to clone.
+ * @return {!Object<K,V>} Clone of the input object.
+ * @template K,V
+ */
+goog.object.clone = function(obj) {
+  // We cannot use the prototype trick because a lot of methods depend on where
+  // the actual key is set.
+
+  var res = {};
+  for (var key in obj) {
+    res[key] = obj[key];
+  }
+  return res;
+  // We could also use goog.mixin but I wanted this to be independent from that.
+};
+
+
+/**
+ * Clones a value. The input may be an Object, Array, or basic type. Objects and
+ * arrays will be cloned recursively.
+ *
+ * WARNINGS:
+ * <code>goog.object.unsafeClone</code> does not detect reference loops. Objects
+ * that refer to themselves will cause infinite recursion.
+ *
+ * <code>goog.object.unsafeClone</code> is unaware of unique identifiers, and
+ * copies UIDs created by <code>getUid</code> into cloned results.
+ *
+ * @param {*} obj The value to clone.
+ * @return {*} A clone of the input value.
+ */
+goog.object.unsafeClone = function(obj) {
+  var type = goog.typeOf(obj);
+  if (type == 'object' || type == 'array') {
+    if (goog.isFunction(obj.clone)) {
+      return obj.clone();
+    }
+    var clone = type == 'array' ? [] : {};
+    for (var key in obj) {
+      clone[key] = goog.object.unsafeClone(obj[key]);
+    }
+    return clone;
+  }
+
+  return obj;
+};
+
+
+/**
+ * Returns a new object in which all the keys and values are interchanged
+ * (keys become values and values become keys). If multiple keys map to the
+ * same value, the chosen transposed value is implementation-dependent.
+ *
+ * @param {Object} obj The object to transpose.
+ * @return {!Object} The transposed object.
+ */
+goog.object.transpose = function(obj) {
+  var transposed = {};
+  for (var key in obj) {
+    transposed[obj[key]] = key;
+  }
+  return transposed;
+};
+
+
+/**
+ * The names of the fields that are defined on Object.prototype.
+ * @type {Array<string>}
+ * @private
+ */
+goog.object.PROTOTYPE_FIELDS_ = [
+  'constructor',
+  'hasOwnProperty',
+  'isPrototypeOf',
+  'propertyIsEnumerable',
+  'toLocaleString',
+  'toString',
+  'valueOf'
+];
+
+
+/**
+ * Extends an object with another object.
+ * This operates 'in-place'; it does not create a new Object.
+ *
+ * Example:
+ * var o = {};
+ * goog.object.extend(o, {a: 0, b: 1});
+ * o; // {a: 0, b: 1}
+ * goog.object.extend(o, {b: 2, c: 3});
+ * o; // {a: 0, b: 2, c: 3}
+ *
+ * @param {Object} target The object to modify. Existing properties will be
+ *     overwritten if they are also present in one of the objects in
+ *     {@code var_args}.
+ * @param {...Object} var_args The objects from which values will be copied.
+ */
+goog.object.extend = function(target, var_args) {
+  var key, source;
+  for (var i = 1; i < arguments.length; i++) {
+    source = arguments[i];
+    for (key in source) {
+      target[key] = source[key];
+    }
+
+    // For IE the for-in-loop does not contain any properties that are not
+    // enumerable on the prototype object (for example isPrototypeOf from
+    // Object.prototype) and it will also not include 'replace' on objects that
+    // extend String and change 'replace' (not that it is common for anyone to
+    // extend anything except Object).
+
+    for (var j = 0; j < goog.object.PROTOTYPE_FIELDS_.length; j++) {
+      key = goog.object.PROTOTYPE_FIELDS_[j];
+      if (Object.prototype.hasOwnProperty.call(source, key)) {
+        target[key] = source[key];
+      }
+    }
+  }
+};
+
+
+/**
+ * Creates a new object built from the key-value pairs provided as arguments.
+ * @param {...*} var_args If only one argument is provided and it is an array
+ *     then this is used as the arguments,  otherwise even arguments are used as
+ *     the property names and odd arguments are used as the property values.
+ * @return {!Object} The new object.
+ * @throws {Error} If there are uneven number of arguments or there is only one
+ *     non array argument.
+ */
+goog.object.create = function(var_args) {
+  var argLength = arguments.length;
+  if (argLength == 1 && goog.isArray(arguments[0])) {
+    return goog.object.create.apply(null, arguments[0]);
+  }
+
+  if (argLength % 2) {
+    throw Error('Uneven number of arguments');
+  }
+
+  var rv = {};
+  for (var i = 0; i < argLength; i += 2) {
+    rv[arguments[i]] = arguments[i + 1];
+  }
+  return rv;
+};
+
+
+/**
+ * Creates a new object where the property names come from the arguments but
+ * the value is always set to true
+ * @param {...*} var_args If only one argument is provided and it is an array
+ *     then this is used as the arguments,  otherwise the arguments are used
+ *     as the property names.
+ * @return {!Object} The new object.
+ */
+goog.object.createSet = function(var_args) {
+  var argLength = arguments.length;
+  if (argLength == 1 && goog.isArray(arguments[0])) {
+    return goog.object.createSet.apply(null, arguments[0]);
+  }
+
+  var rv = {};
+  for (var i = 0; i < argLength; i++) {
+    rv[arguments[i]] = true;
+  }
+  return rv;
+};
+
+
+/**
+ * Creates an immutable view of the underlying object, if the browser
+ * supports immutable objects.
+ *
+ * In default mode, writes to this view will fail silently. In strict mode,
+ * they will throw an error.
+ *
+ * @param {!Object<K,V>} obj An object.
+ * @return {!Object<K,V>} An immutable view of that object, or the
+ *     original object if this browser does not support immutables.
+ * @template K,V
+ */
+goog.object.createImmutableView = function(obj) {
+  var result = obj;
+  if (Object.isFrozen && !Object.isFrozen(obj)) {
+    result = Object.create(obj);
+    Object.freeze(result);
+  }
+  return result;
+};
+
+
+/**
+ * @param {!Object} obj An object.
+ * @return {boolean} Whether this is an immutable view of the object.
+ */
+goog.object.isImmutableView = function(obj) {
+  return !!Object.isFrozen && Object.isFrozen(obj);
+};
+
+goog.provide('olcs.AbstractSynchronizer');
+
+goog.require('goog.object');
+
+goog.require('ol.Observable');
+goog.require('ol.layer.Group');
+
+
+
+/**
+ * @param {!ol.Map} map
+ * @param {!Cesium.Scene} scene
+ * @constructor
+ * @template T
+ * @api
+ */
+olcs.AbstractSynchronizer = function(map, scene) {
+  /**
+   * @type {!ol.Map}
+   * @protected
+   */
+  this.map = map;
+
+  /**
+   * @type {ol.View}
+   * @protected
+   */
+  this.view = map.getView();
+
+  /**
+   * @type {!Cesium.Scene}
+   * @protected
+   */
+  this.scene = scene;
+
+  /**
+   * @type {ol.Collection.<ol.layer.Base>}
+   * @protected
+   */
+  this.olLayers = map.getLayerGroup().getLayers();
+
+  /**
+   * @type {ol.layer.Group}
+   */
+  this.mapLayerGroup = map.getLayerGroup();
+
+  /**
+   * Map of ol3 layer ids (from goog.getUid) to the Cesium ImageryLayers.
+   * Null value means, that we are unable to create equivalent layers.
+   * @type {Object.<number, ?Array.<T>>}
+   * @protected
+   */
+  this.layerMap = {};
+
+  /**
+   * Map of listen keys for ol3 layer layers ids (from goog.getUid).
+   * @type {!Object.<number, goog.events.Key>}
+   * @private
+   */
+  this.olLayerListenKeys_ = {};
+
+  /**
+   * Map of listen keys for ol3 layer groups ids (from goog.getUid).
+   * @type {!Object.<number, !Array.<goog.events.Key>>}
+   * @private
+   */
+  this.olGroupListenKeys_ = {};
+};
+
+
+/**
+ * Destroy all and perform complete synchronization of the layers.
+ * @api
+ */
+olcs.AbstractSynchronizer.prototype.synchronize = function() {
+  this.destroyAll();
+  this.addLayers_(this.mapLayerGroup);
+};
+
+
+/**
+ * Order counterparts using the same algorithm as the Openlayers renderer:
+ * z-index then original sequence order.
+ * @protected
+ */
+olcs.AbstractSynchronizer.prototype.orderLayers = function() {
+  // Ordering logics is handled in subclasses.
+};
+
+
+/**
+ * Add a layer hierarchy.
+ * @param {ol.layer.Base} root
+ * @private
+ */
+olcs.AbstractSynchronizer.prototype.addLayers_ = function(root) {
+  /** @type {Array.<!ol.layer.Base>} */
+  var fifo = [root];
+  while (fifo.length > 0) {
+    var olLayer = fifo.splice(0, 1)[0];
+    var olLayerId = goog.getUid(olLayer);
+    goog.asserts.assert(!goog.isDef(this.layerMap[olLayerId]));
+
+    var cesiumObjects = null;
+    if (olLayer instanceof ol.layer.Group) {
+      this.listenForGroupChanges_(olLayer);
+      cesiumObjects = this.createSingleLayerCounterparts(olLayer);
+      if (!cesiumObjects) {
+        olLayer.getLayers().forEach(function(l) {
+          fifo.push(l);
+        });
+      }
+    } else {
+      cesiumObjects = this.createSingleLayerCounterparts(olLayer);
+    }
+
+    // add Cesium layers
+    if (!goog.isNull(cesiumObjects)) {
+      this.layerMap[olLayerId] = cesiumObjects;
+      this.olLayerListenKeys_[olLayerId] = olLayer.on('change:zIndex',
+          this.orderLayers, this);
+      cesiumObjects.forEach(function(cesiumObject) {
+        this.addCesiumObject(cesiumObject);
+      }, this);
+    }
+  }
+
+  this.orderLayers();
+};
+
+
+/**
+ * Remove and destroy a single layer.
+ * @param {ol.layer.Layer} layer
+ * @private
+ */
+olcs.AbstractSynchronizer.prototype.removeAndDestroySingleLayer_ =
+    function(layer) {
+  var uid = goog.getUid(layer);
+  var counterparts = this.layerMap[uid];
+  if (!!counterparts) {
+    counterparts.forEach(function(counterpart) {
+      this.removeSingleCesiumObject(counterpart, false);
+      this.destroyCesiumObject(counterpart);
+    }, this);
+    ol.Observable.unByKey(this.olLayerListenKeys_[uid]);
+    delete this.olLayerListenKeys_[uid];
+  }
+  delete this.layerMap[uid];
+};
+
+
+/**
+ * Unlisten a single layer group.
+ * @param {ol.layer.Group} group
+ * @private
+ */
+olcs.AbstractSynchronizer.prototype.unlistenSingleGroup_ =
+    function(group) {
+  if (group === this.mapLayerGroup) {
+    return;
+  }
+  var uid = goog.getUid(group);
+  var keys = this.olGroupListenKeys_[uid];
+  keys.forEach(function(key) {
+    ol.Observable.unByKey(key);
+  });
+  delete this.olGroupListenKeys_[uid];
+  delete this.layerMap[uid];
+};
+
+
+/**
+ * Remove layer hierarchy.
+ * @param {ol.layer.Base} root
+ * @private
+ */
+olcs.AbstractSynchronizer.prototype.removeLayer_ = function(root) {
+  if (!!root) {
+    var fifo = [root];
+    while (fifo.length > 0) {
+      var olLayer = fifo.splice(0, 1)[0];
+      if (olLayer instanceof ol.layer.Group) {
+        this.unlistenSingleGroup_(olLayer);
+        olLayer.getLayers().forEach(function(l) {
+          fifo.push(l);
+        });
+      } else {
+        this.removeAndDestroySingleLayer_(olLayer);
+      }
+    }
+  }
+};
+
+
+/**
+ * Register listeners for single layer group change.
+ * @param {ol.layer.Group} group
+ * @private
+ */
+olcs.AbstractSynchronizer.prototype.listenForGroupChanges_ = function(group) {
+  var uuid = goog.getUid(group);
+
+  goog.asserts.assert(!goog.isDef(this.olGroupListenKeys_[uuid]));
+
+  var listenKeyArray = [];
+  this.olGroupListenKeys_[uuid] = listenKeyArray;
+
+  // only the keys that need to be relistened when collection changes
+  var contentKeys = [];
+  var listenAddRemove = (function() {
+    var collection = group.getLayers();
+    if (goog.isDef(collection)) {
+      contentKeys = [
+        collection.on('add', function(event) {
+          this.addLayers_(event.element);
+        }, this),
+        collection.on('remove', function(event) {
+          this.removeLayer_(event.element);
+        }, this)
+      ];
+      listenKeyArray.push.apply(listenKeyArray, contentKeys);
+    }
+  }).bind(this);
+
+  listenAddRemove();
+
+  listenKeyArray.push(group.on('change:layers', function(e) {
+    contentKeys.forEach(function(el) {
+      var i = listenKeyArray.indexOf(el);
+      if (i >= 0) {
+        listenKeyArray.splice(i, 1);
+      }
+      ol.Observable.unByKey(el);
+    });
+    listenAddRemove();
+  }));
+};
+
+
+/**
+ * Destroys all the created Cesium objects.
+ * @protected
+ */
+olcs.AbstractSynchronizer.prototype.destroyAll = function() {
+  this.removeAllCesiumObjects(true); // destroy
+  goog.object.forEach(this.olGroupListenKeys, function(keys) {
+    keys.forEach(ol.Observable.unByKey);
+  });
+  goog.object.forEach(this.olLayerListenKeys, ol.Observable.unByKey);
+  this.olGroupListenKeys = {};
+  this.olLayerListenKeys = {};
+  this.layerMap = {};
+};
+
+
+/**
+ * Adds a single Cesium object to the collection.
+ * @param {!T} object
+ * @protected
+ */
+olcs.AbstractSynchronizer.prototype.addCesiumObject = goog.abstractMethod;
+
+
+/**
+ * @param {!T} object
+ * @protected
+ */
+olcs.AbstractSynchronizer.prototype.destroyCesiumObject = goog.abstractMethod;
+
+
+/**
+ * Remove single Cesium object from the collection.
+ * @param {!T} object
+ * @param {boolean} destroy
+ * @protected
+ */
+olcs.AbstractSynchronizer.prototype.removeSingleCesiumObject =
+    goog.abstractMethod;
+
+
+/**
+ * Remove all Cesium objects from the collection.
+ * @param {boolean} destroy
+ * @protected
+ */
+olcs.AbstractSynchronizer.prototype.removeAllCesiumObjects =
+    goog.abstractMethod;
+
+
+/**
+ * @param {!ol.layer.Base} olLayer
+ * @return {?Array.<T>}
+ * @protected
+ */
+olcs.AbstractSynchronizer.prototype.createSingleLayerCounterparts =
+    goog.abstractMethod;
+
+// Apache v2 license
+// https://github.com/TerriaJS/terriajs/blob/
+// ebd382a8278a817fce316730d9e459bbb9b829e9/lib/Models/Cesium.js
+
+goog.provide('olcs.AutoRenderLoop');
+
+
+
+/**
+ * @constructor
+ * @param {olcs.OLCesium} ol3d
+ * @param {boolean} debug
+ */
+olcs.AutoRenderLoop = function(ol3d, debug) {
+  this.ol3d = ol3d;
+  this.scene_ = ol3d.getCesiumScene();
+  this.verboseRendering = debug;
+  this._boundNotifyRepaintRequired = this.notifyRepaintRequired.bind(this);
+
+  this.lastCameraViewMatrix_ = new Cesium.Matrix4();
+  this.lastCameraMoveTime_ = 0;
+  this.stoppedRendering = false;
+
+  this._removePostRenderListener = this.scene_.postRender.addEventListener(
+      this.postRender.bind(this));
+
+
+  // Detect available wheel event
+  this._wheelEvent = '';
+  if ('onwheel' in this.scene_.canvas) {
+    // spec event type
+    this._wheelEvent = 'wheel';
+  } else if (!!document['onmousewheel']) {
+    // legacy event type
+    this._wheelEvent = 'mousewheel';
+  } else {
+    // older Firefox
+    this._wheelEvent = 'DOMMouseScroll';
+  }
+
+  this._originalLoadWithXhr = Cesium.loadWithXhr.load;
+  this._originalScheduleTask = Cesium.TaskProcessor.prototype.scheduleTask;
+  this._originalCameraSetView = Cesium.Camera.prototype.setView;
+  this._originalCameraMove = Cesium.Camera.prototype.move;
+  this._originalCameraRotate = Cesium.Camera.prototype.rotate;
+  this._originalCameraLookAt = Cesium.Camera.prototype.lookAt;
+  this._originalCameraFlyTo = Cesium.Camera.prototype.flyTo;
+
+  this.enable();
+};
+
+
+/**
+ * Force a repaint when the mouse moves or the window changes size.
+ * @param {string} key
+ * @param {boolean} capture
+ * @private
+ */
+olcs.AutoRenderLoop.prototype.repaintOn_ = function(key, capture) {
+  var canvas = this.scene_.canvas;
+  canvas.addEventListener(key, this._boundNotifyRepaintRequired, capture);
+};
+
+
+/**
+ * @param {string} key
+ * @param {boolean} capture
+ * @private
+ */
+olcs.AutoRenderLoop.prototype.removeRepaintOn_ = function(key, capture) {
+  var canvas = this.scene_.canvas;
+  canvas.removeEventListener(key, this._boundNotifyRepaintRequired, capture);
+};
+
+
+/**
+ * Enable.
+ */
+olcs.AutoRenderLoop.prototype.enable = function() {
+  this.repaintOn_('mousemove', false);
+  this.repaintOn_('mousedown', false);
+  this.repaintOn_('mouseup', false);
+  this.repaintOn_('touchstart', false);
+  this.repaintOn_('touchend', false);
+  this.repaintOn_('touchmove', false);
+
+  if (!!window['PointerEvent']) {
+    this.repaintOn_('pointerdown', false);
+    this.repaintOn_('pointerup', false);
+    this.repaintOn_('pointermove', false);
+  }
+
+  this.repaintOn_(this._wheelEvent, false);
+
+  window.addEventListener('resize', this._boundNotifyRepaintRequired, false);
+
+  // Hacky way to force a repaint when an async load request completes
+  var that = this;
+  Cesium.loadWithXhr.load = function(url, responseType, method, data,
+      headers, deferred, overrideMimeType, preferText, timeout) {
+    deferred['promise']['always'](that._boundNotifyRepaintRequired);
+    that._originalLoadWithXhr(url, responseType, method, data, headers,
+        deferred, overrideMimeType, preferText, timeout);
+  };
+
+  // Hacky way to force a repaint when a web worker sends something back.
+  Cesium.TaskProcessor.prototype.scheduleTask =
+      function(parameters, transferableObjects) {
+    var result = that._originalScheduleTask.call(this, parameters,
+        transferableObjects);
+
+    var taskProcessor = this;
+    if (!taskProcessor._originalWorkerMessageSinkRepaint) {
+      var worker = taskProcessor['_worker'];
+      taskProcessor._originalWorkerMessageSinkRepaint = worker.onmessage;
+      worker.onmessage = function(event) {
+        taskProcessor._originalWorkerMessageSinkRepaint(event);
+        that.notifyRepaintRequired();
+      };
+    }
+
+    return result;
+  };
+
+  Cesium.Camera.prototype.setView = function() {
+    that._originalCameraSetView.apply(this, arguments);
+    that.notifyRepaintRequired();
+  };
+  Cesium.Camera.prototype.move = function() {
+    that._originalCameraMove.apply(this, arguments);
+    that.notifyRepaintRequired();
+  };
+  Cesium.Camera.prototype.rotate = function() {
+    that._originalCameraRotate.apply(this, arguments);
+    that.notifyRepaintRequired();
+  };
+  Cesium.Camera.prototype.lookAt = function() {
+    that._originalCameraLookAt.apply(this, arguments);
+    that.notifyRepaintRequired();
+  };
+  Cesium.Camera.prototype.flyTo = function() {
+    that._originalCameraFlyTo.apply(this, arguments);
+    that.notifyRepaintRequired();
+  };
+
+  // Listen for changes on the layer group
+  this.ol3d.getOlMap().getLayerGroup().on('change',
+      this._boundNotifyRepaintRequired);
+};
+
+
+/**
+ * Disable.
+ */
+olcs.AutoRenderLoop.prototype.disable = function() {
+  if (!!this._removePostRenderListener) {
+    this._removePostRenderListener();
+    this._removePostRenderListener = undefined;
+  }
+
+  this.removeRepaintOn_('mousemove', false);
+  this.removeRepaintOn_('mousedown', false);
+  this.removeRepaintOn_('mouseup', false);
+  this.removeRepaintOn_('touchstart', false);
+  this.removeRepaintOn_('touchend', false);
+  this.removeRepaintOn_('touchmove', false);
+
+  if (!!window['PointerEvent']) {
+    this.removeRepaintOn_('pointerdown', false);
+    this.removeRepaintOn_('pointerup', false);
+    this.removeRepaintOn_('pointermove', false);
+  }
+
+  this.removeRepaintOn_(this._wheelEvent, false);
+
+  window.removeEventListener('resize', this._boundNotifyRepaintRequired, false);
+
+  Cesium.loadWithXhr.load = this._originalLoadWithXhr;
+  Cesium.TaskProcessor.prototype.scheduleTask = this._originalScheduleTask;
+  Cesium.Camera.prototype.setView = this._originalCameraSetView;
+  Cesium.Camera.prototype.move = this._originalCameraMove;
+  Cesium.Camera.prototype.rotate = this._originalCameraRotate;
+  Cesium.Camera.prototype.lookAt = this._originalCameraLookAt;
+  Cesium.Camera.prototype.flyTo = this._originalCameraFlyTo;
+
+  this.ol3d.getOlMap().getLayerGroup().un('change',
+      this._boundNotifyRepaintRequired);
+};
+
+
+/**
+ * @param {number} date
+ */
+olcs.AutoRenderLoop.prototype.postRender = function(date) {
+  // We can safely stop rendering when:
+  //  - the camera position hasn't changed in over a second,
+  //  - there are no tiles waiting to load, and
+  //  - the clock is not animating
+  //  - there are no tweens in progress
+
+  var now = Date.now();
+
+  var scene = this.scene_;
+  var camera = scene.camera;
+
+  if (!Cesium.Matrix4.equalsEpsilon(this.lastCameraViewMatrix_,
+      camera.viewMatrix, 1e-5)) {
+    this.lastCameraMoveTime_ = now;
+  }
+
+  var cameraMovedInLastSecond = now - this.lastCameraMoveTime_ < 1000;
+
+  var surface = scene.globe['_surface'];
+  var tilesWaiting = !surface['_tileProvider'].ready ||
+      surface['_tileLoadQueue'].length > 0 ||
+      surface['_debug']['tilesWaitingForChildren'] > 0;
+
+  var tweens = scene['tweens'];
+  if (!cameraMovedInLastSecond && !tilesWaiting && tweens.length == 0) {
+    if (this.verboseRendering) {
+      console.log('stopping rendering @ ' + Date.now());
+    }
+    this.ol3d.setBlockCesiumRendering(true);
+    this.stoppedRendering = true;
+  }
+
+  Cesium.Matrix4.clone(camera.viewMatrix, this.lastCameraViewMatrix_);
+};
+
+
+/**
+ * Restart render loop.
+ * Force a restart of the render loop.
+ * @api
+ */
+olcs.AutoRenderLoop.prototype.restartRenderLoop = function() {
+  this.notifyRepaintRequired();
+};
+
+
+/**
+ * Notifies the viewer that a repaint is required.
+ */
+olcs.AutoRenderLoop.prototype.notifyRepaintRequired = function() {
+  if (this.verboseRendering && this.stoppedRendering) {
+    console.log('starting rendering @ ' + Date.now());
+  }
+  this._lastCameraMoveTime = Date.now();
+  // TODO: do not unblock if not blocked by us
+  this.ol3d.setBlockCesiumRendering(false);
+  this.stoppedRendering = false;
+};
+
+
+/**
+ * @param {boolean} debug
+ * @api
+ */
+olcs.AutoRenderLoop.prototype.setDebug = function(debug) {
+  this.verboseRendering = debug;
+};
+
 // Copyright 2009 The Closure Library Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -4561,6 +5808,165 @@ goog.asserts.getType_ = function(value) {
   }
 };
 
+// Copyright 2010 The Closure Library Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS-IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+/**
+ * @fileoverview A global registry for entry points into a program,
+ * so that they can be instrumented. Each module should register their
+ * entry points with this registry. Designed to be compiled out
+ * if no instrumentation is requested.
+ *
+ * Entry points may be registered before or after a call to
+ * goog.debug.entryPointRegistry.monitorAll. If an entry point is registered
+ * later, the existing monitor will instrument the new entry point.
+ *
+ * @author nicksantos@google.com (Nick Santos)
+ */
+
+goog.provide('goog.debug.EntryPointMonitor');
+goog.provide('goog.debug.entryPointRegistry');
+
+goog.require('goog.asserts');
+
+
+
+/**
+ * @interface
+ */
+goog.debug.EntryPointMonitor = function() {};
+
+
+/**
+ * Instruments a function.
+ *
+ * @param {!Function} fn A function to instrument.
+ * @return {!Function} The instrumented function.
+ */
+goog.debug.EntryPointMonitor.prototype.wrap;
+
+
+/**
+ * Try to remove an instrumentation wrapper created by this monitor.
+ * If the function passed to unwrap is not a wrapper created by this
+ * monitor, then we will do nothing.
+ *
+ * Notice that some wrappers may not be unwrappable. For example, if other
+ * monitors have applied their own wrappers, then it will be impossible to
+ * unwrap them because their wrappers will have captured our wrapper.
+ *
+ * So it is important that entry points are unwrapped in the reverse
+ * order that they were wrapped.
+ *
+ * @param {!Function} fn A function to unwrap.
+ * @return {!Function} The unwrapped function, or {@code fn} if it was not
+ *     a wrapped function created by this monitor.
+ */
+goog.debug.EntryPointMonitor.prototype.unwrap;
+
+
+/**
+ * An array of entry point callbacks.
+ * @type {!Array<function(!Function)>}
+ * @private
+ */
+goog.debug.entryPointRegistry.refList_ = [];
+
+
+/**
+ * Monitors that should wrap all the entry points.
+ * @type {!Array<!goog.debug.EntryPointMonitor>}
+ * @private
+ */
+goog.debug.entryPointRegistry.monitors_ = [];
+
+
+/**
+ * Whether goog.debug.entryPointRegistry.monitorAll has ever been called.
+ * Checking this allows the compiler to optimize out the registrations.
+ * @type {boolean}
+ * @private
+ */
+goog.debug.entryPointRegistry.monitorsMayExist_ = false;
+
+
+/**
+ * Register an entry point with this module.
+ *
+ * The entry point will be instrumented when a monitor is passed to
+ * goog.debug.entryPointRegistry.monitorAll. If this has already occurred, the
+ * entry point is instrumented immediately.
+ *
+ * @param {function(!Function)} callback A callback function which is called
+ *     with a transforming function to instrument the entry point. The callback
+ *     is responsible for wrapping the relevant entry point with the
+ *     transforming function.
+ */
+goog.debug.entryPointRegistry.register = function(callback) {
+  // Don't use push(), so that this can be compiled out.
+  goog.debug.entryPointRegistry.refList_[
+      goog.debug.entryPointRegistry.refList_.length] = callback;
+  // If no one calls monitorAll, this can be compiled out.
+  if (goog.debug.entryPointRegistry.monitorsMayExist_) {
+    var monitors = goog.debug.entryPointRegistry.monitors_;
+    for (var i = 0; i < monitors.length; i++) {
+      callback(goog.bind(monitors[i].wrap, monitors[i]));
+    }
+  }
+};
+
+
+/**
+ * Configures a monitor to wrap all entry points.
+ *
+ * Entry points that have already been registered are immediately wrapped by
+ * the monitor. When an entry point is registered in the future, it will also
+ * be wrapped by the monitor when it is registered.
+ *
+ * @param {!goog.debug.EntryPointMonitor} monitor An entry point monitor.
+ */
+goog.debug.entryPointRegistry.monitorAll = function(monitor) {
+  goog.debug.entryPointRegistry.monitorsMayExist_ = true;
+  var transformer = goog.bind(monitor.wrap, monitor);
+  for (var i = 0; i < goog.debug.entryPointRegistry.refList_.length; i++) {
+    goog.debug.entryPointRegistry.refList_[i](transformer);
+  }
+  goog.debug.entryPointRegistry.monitors_.push(monitor);
+};
+
+
+/**
+ * Try to unmonitor all the entry points that have already been registered. If
+ * an entry point is registered in the future, it will not be wrapped by the
+ * monitor when it is registered. Note that this may fail if the entry points
+ * have additional wrapping.
+ *
+ * @param {!goog.debug.EntryPointMonitor} monitor The last monitor to wrap
+ *     the entry points.
+ * @throws {Error} If the monitor is not the most recently configured monitor.
+ */
+goog.debug.entryPointRegistry.unmonitorAllIfPossible = function(monitor) {
+  var monitors = goog.debug.entryPointRegistry.monitors_;
+  goog.asserts.assert(monitor == monitors[monitors.length - 1],
+      'Only the most recent monitor can be unwrapped.');
+  var transformer = goog.bind(monitor.unwrap, monitor);
+  for (var i = 0; i < goog.debug.entryPointRegistry.refList_.length; i++) {
+    goog.debug.entryPointRegistry.refList_[i](transformer);
+  }
+  monitors.length--;
+};
+
 // Copyright 2006 The Closure Library Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -6214,1173 +7620,6 @@ goog.array.copyByIndex = function(arr, index_arr) {
     result.push(arr[index]);
   });
   return result;
-};
-
-// Copyright 2006 The Closure Library Authors. All Rights Reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS-IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-/**
- * @fileoverview Utilities for manipulating objects/maps/hashes.
- * @author arv@google.com (Erik Arvidsson)
- */
-
-goog.provide('goog.object');
-
-
-/**
- * Calls a function for each element in an object/map/hash.
- *
- * @param {Object<K,V>} obj The object over which to iterate.
- * @param {function(this:T,V,?,Object<K,V>):?} f The function to call
- *     for every element. This function takes 3 arguments (the value, the
- *     key and the object) and the return value is ignored.
- * @param {T=} opt_obj This is used as the 'this' object within f.
- * @template T,K,V
- */
-goog.object.forEach = function(obj, f, opt_obj) {
-  for (var key in obj) {
-    f.call(opt_obj, obj[key], key, obj);
-  }
-};
-
-
-/**
- * Calls a function for each element in an object/map/hash. If that call returns
- * true, adds the element to a new object.
- *
- * @param {Object<K,V>} obj The object over which to iterate.
- * @param {function(this:T,V,?,Object<K,V>):boolean} f The function to call
- *     for every element. This
- *     function takes 3 arguments (the value, the key and the object)
- *     and should return a boolean. If the return value is true the
- *     element is added to the result object. If it is false the
- *     element is not included.
- * @param {T=} opt_obj This is used as the 'this' object within f.
- * @return {!Object<K,V>} a new object in which only elements that passed the
- *     test are present.
- * @template T,K,V
- */
-goog.object.filter = function(obj, f, opt_obj) {
-  var res = {};
-  for (var key in obj) {
-    if (f.call(opt_obj, obj[key], key, obj)) {
-      res[key] = obj[key];
-    }
-  }
-  return res;
-};
-
-
-/**
- * For every element in an object/map/hash calls a function and inserts the
- * result into a new object.
- *
- * @param {Object<K,V>} obj The object over which to iterate.
- * @param {function(this:T,V,?,Object<K,V>):R} f The function to call
- *     for every element. This function
- *     takes 3 arguments (the value, the key and the object)
- *     and should return something. The result will be inserted
- *     into a new object.
- * @param {T=} opt_obj This is used as the 'this' object within f.
- * @return {!Object<K,R>} a new object with the results from f.
- * @template T,K,V,R
- */
-goog.object.map = function(obj, f, opt_obj) {
-  var res = {};
-  for (var key in obj) {
-    res[key] = f.call(opt_obj, obj[key], key, obj);
-  }
-  return res;
-};
-
-
-/**
- * Calls a function for each element in an object/map/hash. If any
- * call returns true, returns true (without checking the rest). If
- * all calls return false, returns false.
- *
- * @param {Object<K,V>} obj The object to check.
- * @param {function(this:T,V,?,Object<K,V>):boolean} f The function to
- *     call for every element. This function
- *     takes 3 arguments (the value, the key and the object) and should
- *     return a boolean.
- * @param {T=} opt_obj This is used as the 'this' object within f.
- * @return {boolean} true if any element passes the test.
- * @template T,K,V
- */
-goog.object.some = function(obj, f, opt_obj) {
-  for (var key in obj) {
-    if (f.call(opt_obj, obj[key], key, obj)) {
-      return true;
-    }
-  }
-  return false;
-};
-
-
-/**
- * Calls a function for each element in an object/map/hash. If
- * all calls return true, returns true. If any call returns false, returns
- * false at this point and does not continue to check the remaining elements.
- *
- * @param {Object<K,V>} obj The object to check.
- * @param {?function(this:T,V,?,Object<K,V>):boolean} f The function to
- *     call for every element. This function
- *     takes 3 arguments (the value, the key and the object) and should
- *     return a boolean.
- * @param {T=} opt_obj This is used as the 'this' object within f.
- * @return {boolean} false if any element fails the test.
- * @template T,K,V
- */
-goog.object.every = function(obj, f, opt_obj) {
-  for (var key in obj) {
-    if (!f.call(opt_obj, obj[key], key, obj)) {
-      return false;
-    }
-  }
-  return true;
-};
-
-
-/**
- * Returns the number of key-value pairs in the object map.
- *
- * @param {Object} obj The object for which to get the number of key-value
- *     pairs.
- * @return {number} The number of key-value pairs in the object map.
- */
-goog.object.getCount = function(obj) {
-  // JS1.5 has __count__ but it has been deprecated so it raises a warning...
-  // in other words do not use. Also __count__ only includes the fields on the
-  // actual object and not in the prototype chain.
-  var rv = 0;
-  for (var key in obj) {
-    rv++;
-  }
-  return rv;
-};
-
-
-/**
- * Returns one key from the object map, if any exists.
- * For map literals the returned key will be the first one in most of the
- * browsers (a know exception is Konqueror).
- *
- * @param {Object} obj The object to pick a key from.
- * @return {string|undefined} The key or undefined if the object is empty.
- */
-goog.object.getAnyKey = function(obj) {
-  for (var key in obj) {
-    return key;
-  }
-};
-
-
-/**
- * Returns one value from the object map, if any exists.
- * For map literals the returned value will be the first one in most of the
- * browsers (a know exception is Konqueror).
- *
- * @param {Object<K,V>} obj The object to pick a value from.
- * @return {V|undefined} The value or undefined if the object is empty.
- * @template K,V
- */
-goog.object.getAnyValue = function(obj) {
-  for (var key in obj) {
-    return obj[key];
-  }
-};
-
-
-/**
- * Whether the object/hash/map contains the given object as a value.
- * An alias for goog.object.containsValue(obj, val).
- *
- * @param {Object<K,V>} obj The object in which to look for val.
- * @param {V} val The object for which to check.
- * @return {boolean} true if val is present.
- * @template K,V
- */
-goog.object.contains = function(obj, val) {
-  return goog.object.containsValue(obj, val);
-};
-
-
-/**
- * Returns the values of the object/map/hash.
- *
- * @param {Object<K,V>} obj The object from which to get the values.
- * @return {!Array<V>} The values in the object/map/hash.
- * @template K,V
- */
-goog.object.getValues = function(obj) {
-  var res = [];
-  var i = 0;
-  for (var key in obj) {
-    res[i++] = obj[key];
-  }
-  return res;
-};
-
-
-/**
- * Returns the keys of the object/map/hash.
- *
- * @param {Object} obj The object from which to get the keys.
- * @return {!Array<string>} Array of property keys.
- */
-goog.object.getKeys = function(obj) {
-  var res = [];
-  var i = 0;
-  for (var key in obj) {
-    res[i++] = key;
-  }
-  return res;
-};
-
-
-/**
- * Get a value from an object multiple levels deep.  This is useful for
- * pulling values from deeply nested objects, such as JSON responses.
- * Example usage: getValueByKeys(jsonObj, 'foo', 'entries', 3)
- *
- * @param {!Object} obj An object to get the value from.  Can be array-like.
- * @param {...(string|number|!Array<number|string>)} var_args A number of keys
- *     (as strings, or numbers, for array-like objects).  Can also be
- *     specified as a single array of keys.
- * @return {*} The resulting value.  If, at any point, the value for a key
- *     is undefined, returns undefined.
- */
-goog.object.getValueByKeys = function(obj, var_args) {
-  var isArrayLike = goog.isArrayLike(var_args);
-  var keys = isArrayLike ? var_args : arguments;
-
-  // Start with the 2nd parameter for the variable parameters syntax.
-  for (var i = isArrayLike ? 0 : 1; i < keys.length; i++) {
-    obj = obj[keys[i]];
-    if (!goog.isDef(obj)) {
-      break;
-    }
-  }
-
-  return obj;
-};
-
-
-/**
- * Whether the object/map/hash contains the given key.
- *
- * @param {Object} obj The object in which to look for key.
- * @param {*} key The key for which to check.
- * @return {boolean} true If the map contains the key.
- */
-goog.object.containsKey = function(obj, key) {
-  return key in obj;
-};
-
-
-/**
- * Whether the object/map/hash contains the given value. This is O(n).
- *
- * @param {Object<K,V>} obj The object in which to look for val.
- * @param {V} val The value for which to check.
- * @return {boolean} true If the map contains the value.
- * @template K,V
- */
-goog.object.containsValue = function(obj, val) {
-  for (var key in obj) {
-    if (obj[key] == val) {
-      return true;
-    }
-  }
-  return false;
-};
-
-
-/**
- * Searches an object for an element that satisfies the given condition and
- * returns its key.
- * @param {Object<K,V>} obj The object to search in.
- * @param {function(this:T,V,string,Object<K,V>):boolean} f The
- *      function to call for every element. Takes 3 arguments (the value,
- *     the key and the object) and should return a boolean.
- * @param {T=} opt_this An optional "this" context for the function.
- * @return {string|undefined} The key of an element for which the function
- *     returns true or undefined if no such element is found.
- * @template T,K,V
- */
-goog.object.findKey = function(obj, f, opt_this) {
-  for (var key in obj) {
-    if (f.call(opt_this, obj[key], key, obj)) {
-      return key;
-    }
-  }
-  return undefined;
-};
-
-
-/**
- * Searches an object for an element that satisfies the given condition and
- * returns its value.
- * @param {Object<K,V>} obj The object to search in.
- * @param {function(this:T,V,string,Object<K,V>):boolean} f The function
- *     to call for every element. Takes 3 arguments (the value, the key
- *     and the object) and should return a boolean.
- * @param {T=} opt_this An optional "this" context for the function.
- * @return {V} The value of an element for which the function returns true or
- *     undefined if no such element is found.
- * @template T,K,V
- */
-goog.object.findValue = function(obj, f, opt_this) {
-  var key = goog.object.findKey(obj, f, opt_this);
-  return key && obj[key];
-};
-
-
-/**
- * Whether the object/map/hash is empty.
- *
- * @param {Object} obj The object to test.
- * @return {boolean} true if obj is empty.
- */
-goog.object.isEmpty = function(obj) {
-  for (var key in obj) {
-    return false;
-  }
-  return true;
-};
-
-
-/**
- * Removes all key value pairs from the object/map/hash.
- *
- * @param {Object} obj The object to clear.
- */
-goog.object.clear = function(obj) {
-  for (var i in obj) {
-    delete obj[i];
-  }
-};
-
-
-/**
- * Removes a key-value pair based on the key.
- *
- * @param {Object} obj The object from which to remove the key.
- * @param {*} key The key to remove.
- * @return {boolean} Whether an element was removed.
- */
-goog.object.remove = function(obj, key) {
-  var rv;
-  if ((rv = key in obj)) {
-    delete obj[key];
-  }
-  return rv;
-};
-
-
-/**
- * Adds a key-value pair to the object. Throws an exception if the key is
- * already in use. Use set if you want to change an existing pair.
- *
- * @param {Object<K,V>} obj The object to which to add the key-value pair.
- * @param {string} key The key to add.
- * @param {V} val The value to add.
- * @template K,V
- */
-goog.object.add = function(obj, key, val) {
-  if (key in obj) {
-    throw Error('The object already contains the key "' + key + '"');
-  }
-  goog.object.set(obj, key, val);
-};
-
-
-/**
- * Returns the value for the given key.
- *
- * @param {Object<K,V>} obj The object from which to get the value.
- * @param {string} key The key for which to get the value.
- * @param {R=} opt_val The value to return if no item is found for the given
- *     key (default is undefined).
- * @return {V|R|undefined} The value for the given key.
- * @template K,V,R
- */
-goog.object.get = function(obj, key, opt_val) {
-  if (key in obj) {
-    return obj[key];
-  }
-  return opt_val;
-};
-
-
-/**
- * Adds a key-value pair to the object/map/hash.
- *
- * @param {Object<K,V>} obj The object to which to add the key-value pair.
- * @param {string} key The key to add.
- * @param {V} value The value to add.
- * @template K,V
- */
-goog.object.set = function(obj, key, value) {
-  obj[key] = value;
-};
-
-
-/**
- * Adds a key-value pair to the object/map/hash if it doesn't exist yet.
- *
- * @param {Object<K,V>} obj The object to which to add the key-value pair.
- * @param {string} key The key to add.
- * @param {V} value The value to add if the key wasn't present.
- * @return {V} The value of the entry at the end of the function.
- * @template K,V
- */
-goog.object.setIfUndefined = function(obj, key, value) {
-  return key in obj ? obj[key] : (obj[key] = value);
-};
-
-
-/**
- * Sets a key and value to an object if the key is not set. The value will be
- * the return value of the given function. If the key already exists, the
- * object will not be changed and the function will not be called (the function
- * will be lazily evaluated -- only called if necessary).
- *
- * This function is particularly useful for use with a map used a as a cache.
- *
- * @param {!Object<K,V>} obj The object to which to add the key-value pair.
- * @param {string} key The key to add.
- * @param {function():V} f The value to add if the key wasn't present.
- * @return {V} The value of the entry at the end of the function.
- * @template K,V
- */
-goog.object.setWithReturnValueIfNotSet = function(obj, key, f) {
-  if (key in obj) {
-    return obj[key];
-  }
-
-  var val = f();
-  obj[key] = val;
-  return val;
-};
-
-
-/**
- * Compares two objects for equality using === on the values.
- *
- * @param {!Object<K,V>} a
- * @param {!Object<K,V>} b
- * @return {boolean}
- * @template K,V
- */
-goog.object.equals = function(a, b) {
-  for (var k in a) {
-    if (!(k in b) || a[k] !== b[k]) {
-      return false;
-    }
-  }
-  for (var k in b) {
-    if (!(k in a)) {
-      return false;
-    }
-  }
-  return true;
-};
-
-
-/**
- * Does a flat clone of the object.
- *
- * @param {Object<K,V>} obj Object to clone.
- * @return {!Object<K,V>} Clone of the input object.
- * @template K,V
- */
-goog.object.clone = function(obj) {
-  // We cannot use the prototype trick because a lot of methods depend on where
-  // the actual key is set.
-
-  var res = {};
-  for (var key in obj) {
-    res[key] = obj[key];
-  }
-  return res;
-  // We could also use goog.mixin but I wanted this to be independent from that.
-};
-
-
-/**
- * Clones a value. The input may be an Object, Array, or basic type. Objects and
- * arrays will be cloned recursively.
- *
- * WARNINGS:
- * <code>goog.object.unsafeClone</code> does not detect reference loops. Objects
- * that refer to themselves will cause infinite recursion.
- *
- * <code>goog.object.unsafeClone</code> is unaware of unique identifiers, and
- * copies UIDs created by <code>getUid</code> into cloned results.
- *
- * @param {*} obj The value to clone.
- * @return {*} A clone of the input value.
- */
-goog.object.unsafeClone = function(obj) {
-  var type = goog.typeOf(obj);
-  if (type == 'object' || type == 'array') {
-    if (goog.isFunction(obj.clone)) {
-      return obj.clone();
-    }
-    var clone = type == 'array' ? [] : {};
-    for (var key in obj) {
-      clone[key] = goog.object.unsafeClone(obj[key]);
-    }
-    return clone;
-  }
-
-  return obj;
-};
-
-
-/**
- * Returns a new object in which all the keys and values are interchanged
- * (keys become values and values become keys). If multiple keys map to the
- * same value, the chosen transposed value is implementation-dependent.
- *
- * @param {Object} obj The object to transpose.
- * @return {!Object} The transposed object.
- */
-goog.object.transpose = function(obj) {
-  var transposed = {};
-  for (var key in obj) {
-    transposed[obj[key]] = key;
-  }
-  return transposed;
-};
-
-
-/**
- * The names of the fields that are defined on Object.prototype.
- * @type {Array<string>}
- * @private
- */
-goog.object.PROTOTYPE_FIELDS_ = [
-  'constructor',
-  'hasOwnProperty',
-  'isPrototypeOf',
-  'propertyIsEnumerable',
-  'toLocaleString',
-  'toString',
-  'valueOf'
-];
-
-
-/**
- * Extends an object with another object.
- * This operates 'in-place'; it does not create a new Object.
- *
- * Example:
- * var o = {};
- * goog.object.extend(o, {a: 0, b: 1});
- * o; // {a: 0, b: 1}
- * goog.object.extend(o, {b: 2, c: 3});
- * o; // {a: 0, b: 2, c: 3}
- *
- * @param {Object} target The object to modify. Existing properties will be
- *     overwritten if they are also present in one of the objects in
- *     {@code var_args}.
- * @param {...Object} var_args The objects from which values will be copied.
- */
-goog.object.extend = function(target, var_args) {
-  var key, source;
-  for (var i = 1; i < arguments.length; i++) {
-    source = arguments[i];
-    for (key in source) {
-      target[key] = source[key];
-    }
-
-    // For IE the for-in-loop does not contain any properties that are not
-    // enumerable on the prototype object (for example isPrototypeOf from
-    // Object.prototype) and it will also not include 'replace' on objects that
-    // extend String and change 'replace' (not that it is common for anyone to
-    // extend anything except Object).
-
-    for (var j = 0; j < goog.object.PROTOTYPE_FIELDS_.length; j++) {
-      key = goog.object.PROTOTYPE_FIELDS_[j];
-      if (Object.prototype.hasOwnProperty.call(source, key)) {
-        target[key] = source[key];
-      }
-    }
-  }
-};
-
-
-/**
- * Creates a new object built from the key-value pairs provided as arguments.
- * @param {...*} var_args If only one argument is provided and it is an array
- *     then this is used as the arguments,  otherwise even arguments are used as
- *     the property names and odd arguments are used as the property values.
- * @return {!Object} The new object.
- * @throws {Error} If there are uneven number of arguments or there is only one
- *     non array argument.
- */
-goog.object.create = function(var_args) {
-  var argLength = arguments.length;
-  if (argLength == 1 && goog.isArray(arguments[0])) {
-    return goog.object.create.apply(null, arguments[0]);
-  }
-
-  if (argLength % 2) {
-    throw Error('Uneven number of arguments');
-  }
-
-  var rv = {};
-  for (var i = 0; i < argLength; i += 2) {
-    rv[arguments[i]] = arguments[i + 1];
-  }
-  return rv;
-};
-
-
-/**
- * Creates a new object where the property names come from the arguments but
- * the value is always set to true
- * @param {...*} var_args If only one argument is provided and it is an array
- *     then this is used as the arguments,  otherwise the arguments are used
- *     as the property names.
- * @return {!Object} The new object.
- */
-goog.object.createSet = function(var_args) {
-  var argLength = arguments.length;
-  if (argLength == 1 && goog.isArray(arguments[0])) {
-    return goog.object.createSet.apply(null, arguments[0]);
-  }
-
-  var rv = {};
-  for (var i = 0; i < argLength; i++) {
-    rv[arguments[i]] = true;
-  }
-  return rv;
-};
-
-
-/**
- * Creates an immutable view of the underlying object, if the browser
- * supports immutable objects.
- *
- * In default mode, writes to this view will fail silently. In strict mode,
- * they will throw an error.
- *
- * @param {!Object<K,V>} obj An object.
- * @return {!Object<K,V>} An immutable view of that object, or the
- *     original object if this browser does not support immutables.
- * @template K,V
- */
-goog.object.createImmutableView = function(obj) {
-  var result = obj;
-  if (Object.isFrozen && !Object.isFrozen(obj)) {
-    result = Object.create(obj);
-    Object.freeze(result);
-  }
-  return result;
-};
-
-
-/**
- * @param {!Object} obj An object.
- * @return {boolean} Whether this is an immutable view of the object.
- */
-goog.object.isImmutableView = function(obj) {
-  return !!Object.isFrozen && Object.isFrozen(obj);
-};
-
-goog.provide('olcs.AbstractSynchronizer');
-
-goog.require('goog.array');
-goog.require('goog.object');
-
-goog.require('ol.Observable');
-goog.require('ol.layer.Group');
-
-
-
-/**
- * @param {!ol.Map} map
- * @param {!Cesium.Scene} scene
- * @constructor
- * @template T
- * @api
- */
-olcs.AbstractSynchronizer = function(map, scene) {
-  /**
-   * @type {!ol.Map}
-   * @protected
-   */
-  this.map = map;
-
-  /**
-   * @type {ol.View}
-   * @protected
-   */
-  this.view = map.getView();
-
-  /**
-   * @type {!Cesium.Scene}
-   * @protected
-   */
-  this.scene = scene;
-
-  /**
-   * @type {ol.Collection.<ol.layer.Base>}
-   * @protected
-   */
-  this.olLayers = map.getLayerGroup().getLayers();
-
-  /**
-   * @type {ol.layer.Group}
-   */
-  this.mapLayerGroup = map.getLayerGroup();
-
-  /**
-   * Map of ol3 layer ids (from goog.getUid) to the Cesium ImageryLayers.
-   * null value means, that we are unable to create equivalent layer.
-   * @type {Object.<number, ?T>}
-   * @protected
-   */
-  this.layerMap = {};
-
-  /**
-   * Map of listen keys for ol3 layer layers ids (from goog.getUid).
-   * @type {!Object.<number, !goog.events.Key>}
-   * @private
-   */
-  this.olLayerListenKeys_ = {};
-
-  /**
-   * Map of listen keys for ol3 layer groups ids (from goog.getUid).
-   * @type {!Object.<number, !Array.<goog.events.Key>>}
-   * @private
-   */
-  this.olGroupListenKeys_ = {};
-};
-
-
-/**
- * Destroy all and perform complete synchronization of the layers.
- * @api
- */
-olcs.AbstractSynchronizer.prototype.synchronize = function() {
-  this.destroyAll();
-  this.addLayers_(this.mapLayerGroup);
-};
-
-
-/**
- * Populate the foundLayers and foundGroups using a breadth-first algorithm.
- * A map of layer uid to z-index is also populated.
- * @param {ol.layer.Base} layer
- * @param {Array.<ol.layer.Layer>} foundLayers Found leaves.
- * @param {Array.<ol.layer.Group>} foundGroups Found nodes.
- * @param {Object.<number, number>=} opt_zIndices Map of layer uid to z-index.
- * @protected
- */
-olcs.AbstractSynchronizer.flattenLayers =
-    function(layer, foundLayers, foundGroups, opt_zIndices) {
-  if (layer instanceof ol.layer.Group) {
-    foundGroups.push(layer);
-    var sublayers = layer.getLayers();
-    if (goog.isDef(sublayers)) {
-      sublayers.forEach(function(el) {
-        olcs.AbstractSynchronizer.flattenLayers(el, foundLayers, foundGroups,
-            opt_zIndices);
-      });
-    }
-  } else {
-    foundLayers.push(layer);
-    if (opt_zIndices) {
-      opt_zIndices[goog.getUid(layer)] = layer.getZIndex();
-    }
-  }
-};
-
-
-/**
- * Order counterparts using the same algorithm as the Openlayers renderer:
- * z-index then original sequence order.
- * @protected
- */
-olcs.AbstractSynchronizer.prototype.orderLayers = function() {
-  // Ordering logics is handled in subclasses.
-};
-
-
-/**
- * Add a layer hierarchy.
- * @param {ol.layer.Base} root
- * @private
- */
-olcs.AbstractSynchronizer.prototype.addLayers_ = function(root) {
-  var layers = [];
-  var groups = [];
-  olcs.AbstractSynchronizer.flattenLayers(root, layers, groups);
-
-  layers.forEach(function(olLayer) {
-    if (goog.isNull(olLayer)) {
-      return;
-    }
-    var olLayerId = goog.getUid(olLayer);
-
-    var cesiumObject = this.layerMap[olLayerId];
-    goog.asserts.assert(!goog.isDef(cesiumObject));
-
-    // no mapping -> create new layer and set up synchronization
-    cesiumObject = this.createSingleCounterpart(olLayer);
-
-    // add Cesium layers
-    if (!goog.isNull(cesiumObject)) {
-      cesiumObject.zIndex = olLayer.getZIndex();
-      this.addCesiumObject(cesiumObject);
-      this.layerMap[olLayerId] = cesiumObject;
-      this.olLayerListenKeys_[olLayerId] = olLayer.on('change:zIndex',
-          this.orderLayers, this);
-    }
-  }, this);
-
-  groups.forEach(function(el) {
-    this.listenForGroupChanges_(el);
-  }, this);
-
-  this.orderLayers();
-};
-
-
-/**
- * Remove and destroy a single layer.
- * @param {ol.layer.Layer} layer
- * @private
- */
-olcs.AbstractSynchronizer.prototype.removeAndDestroySingleLayer_ =
-    function(layer) {
-  var uid = goog.getUid(layer);
-  var counterpart = this.layerMap[uid];
-  if (!!counterpart) {
-    this.removeSingleCesiumObject(counterpart, false);
-    this.destroyCesiumObject(counterpart);
-    ol.Observable.unByKey(this.olLayerListenKeys_[uid]);
-    delete this.olLayerListenKeys_[uid];
-  }
-  delete this.layerMap[uid];
-};
-
-
-/**
- * Unlisten a single layer group.
- * @param {ol.layer.Group} group
- * @private
- */
-olcs.AbstractSynchronizer.prototype.unlistenSingleGroup_ =
-    function(group) {
-  if (group === this.mapLayerGroup) {
-    return;
-  }
-  var uid = goog.getUid(group);
-  var keys = this.olGroupListenKeys_[uid];
-  keys.forEach(function(key) {
-    ol.Observable.unByKey(key);
-  });
-  delete this.olGroupListenKeys_[uid];
-};
-
-
-/**
- * Remove layer hierarchy.
- * @param {ol.layer.Base} root
- * @private
- */
-olcs.AbstractSynchronizer.prototype.removeLayer_ = function(root) {
-  if (!root) {
-    return;
-  }
-  var layers = [];
-  var groups = [];
-  olcs.AbstractSynchronizer.flattenLayers(root, layers, groups);
-
-  layers.forEach(function(el) {
-    this.removeAndDestroySingleLayer_(el);
-  }, this);
-
-  groups.forEach(function(el) {
-    this.unlistenSingleGroup_(el);
-  }, this);
-};
-
-
-/**
- * Register listeners for single layer group change.
- * @param {ol.layer.Group} group
- * @private
- */
-olcs.AbstractSynchronizer.prototype.listenForGroupChanges_ = function(group) {
-  var uuid = goog.getUid(group);
-
-  goog.asserts.assert(!goog.isDef(this.olGroupListenKeys_[uuid]));
-
-  var listenKeyArray = [];
-  this.olGroupListenKeys_[uuid] = listenKeyArray;
-
-  // only the keys that need to be relistened when collection changes
-  var contentKeys = [];
-  var listenAddRemove = goog.bind(function() {
-    var collection = group.getLayers();
-    if (goog.isDef(collection)) {
-      contentKeys = [
-        collection.on('add', function(event) {
-          this.addLayers_(event.element);
-        }, this),
-        collection.on('remove', function(event) {
-          this.removeLayer_(event.element);
-        }, this)
-      ];
-      listenKeyArray.push.apply(listenKeyArray, contentKeys);
-    }
-  }, this);
-
-  listenAddRemove();
-
-  listenKeyArray.push(group.on('change:layers', function(e) {
-    goog.array.forEach(contentKeys, function(el) {
-      goog.array.remove(listenKeyArray, el);
-      ol.Observable.unByKey(el);
-    });
-    listenAddRemove();
-  }));
-};
-
-
-/**
- * Destroys all the created Cesium objects.
- * @protected
- */
-olcs.AbstractSynchronizer.prototype.destroyAll = function() {
-  this.removeAllCesiumObjects(true); // destroy
-  goog.object.forEach(this.olGroupListenKeys, function(keys) {
-    keys.forEach(ol.Observable.unByKey);
-  });
-  goog.object.forEach(this.olLayerListenKeys, ol.Observable.unByKey);
-  this.olGroupListenKeys = {};
-  this.olLayerListenKeys = {};
-  this.layerMap = {};
-};
-
-
-/**
- * Adds a single Cesium object to the collection.
- * @param {!T} object
- * @protected
- */
-olcs.AbstractSynchronizer.prototype.addCesiumObject = goog.abstractMethod;
-
-
-/**
- * @param {!T} object
- * @protected
- */
-olcs.AbstractSynchronizer.prototype.destroyCesiumObject = goog.abstractMethod;
-
-
-/**
- * Remove single Cesium object from the collection.
- * @param {!T} object
- * @param {boolean} destroy
- * @protected
- */
-olcs.AbstractSynchronizer.prototype.removeSingleCesiumObject =
-    goog.abstractMethod;
-
-
-/**
- * Remove all Cesium objects from the collection.
- * @param {boolean} destroy
- * @protected
- */
-olcs.AbstractSynchronizer.prototype.removeAllCesiumObjects =
-    goog.abstractMethod;
-
-
-/**
- * @param {!ol.layer.Layer} olLayer
- * @return {T}
- * @protected
- */
-olcs.AbstractSynchronizer.prototype.createSingleCounterpart =
-    goog.abstractMethod;
-
-// Copyright 2010 The Closure Library Authors. All Rights Reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS-IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-/**
- * @fileoverview A global registry for entry points into a program,
- * so that they can be instrumented. Each module should register their
- * entry points with this registry. Designed to be compiled out
- * if no instrumentation is requested.
- *
- * Entry points may be registered before or after a call to
- * goog.debug.entryPointRegistry.monitorAll. If an entry point is registered
- * later, the existing monitor will instrument the new entry point.
- *
- * @author nicksantos@google.com (Nick Santos)
- */
-
-goog.provide('goog.debug.EntryPointMonitor');
-goog.provide('goog.debug.entryPointRegistry');
-
-goog.require('goog.asserts');
-
-
-
-/**
- * @interface
- */
-goog.debug.EntryPointMonitor = function() {};
-
-
-/**
- * Instruments a function.
- *
- * @param {!Function} fn A function to instrument.
- * @return {!Function} The instrumented function.
- */
-goog.debug.EntryPointMonitor.prototype.wrap;
-
-
-/**
- * Try to remove an instrumentation wrapper created by this monitor.
- * If the function passed to unwrap is not a wrapper created by this
- * monitor, then we will do nothing.
- *
- * Notice that some wrappers may not be unwrappable. For example, if other
- * monitors have applied their own wrappers, then it will be impossible to
- * unwrap them because their wrappers will have captured our wrapper.
- *
- * So it is important that entry points are unwrapped in the reverse
- * order that they were wrapped.
- *
- * @param {!Function} fn A function to unwrap.
- * @return {!Function} The unwrapped function, or {@code fn} if it was not
- *     a wrapped function created by this monitor.
- */
-goog.debug.EntryPointMonitor.prototype.unwrap;
-
-
-/**
- * An array of entry point callbacks.
- * @type {!Array<function(!Function)>}
- * @private
- */
-goog.debug.entryPointRegistry.refList_ = [];
-
-
-/**
- * Monitors that should wrap all the entry points.
- * @type {!Array<!goog.debug.EntryPointMonitor>}
- * @private
- */
-goog.debug.entryPointRegistry.monitors_ = [];
-
-
-/**
- * Whether goog.debug.entryPointRegistry.monitorAll has ever been called.
- * Checking this allows the compiler to optimize out the registrations.
- * @type {boolean}
- * @private
- */
-goog.debug.entryPointRegistry.monitorsMayExist_ = false;
-
-
-/**
- * Register an entry point with this module.
- *
- * The entry point will be instrumented when a monitor is passed to
- * goog.debug.entryPointRegistry.monitorAll. If this has already occurred, the
- * entry point is instrumented immediately.
- *
- * @param {function(!Function)} callback A callback function which is called
- *     with a transforming function to instrument the entry point. The callback
- *     is responsible for wrapping the relevant entry point with the
- *     transforming function.
- */
-goog.debug.entryPointRegistry.register = function(callback) {
-  // Don't use push(), so that this can be compiled out.
-  goog.debug.entryPointRegistry.refList_[
-      goog.debug.entryPointRegistry.refList_.length] = callback;
-  // If no one calls monitorAll, this can be compiled out.
-  if (goog.debug.entryPointRegistry.monitorsMayExist_) {
-    var monitors = goog.debug.entryPointRegistry.monitors_;
-    for (var i = 0; i < monitors.length; i++) {
-      callback(goog.bind(monitors[i].wrap, monitors[i]));
-    }
-  }
-};
-
-
-/**
- * Configures a monitor to wrap all entry points.
- *
- * Entry points that have already been registered are immediately wrapped by
- * the monitor. When an entry point is registered in the future, it will also
- * be wrapped by the monitor when it is registered.
- *
- * @param {!goog.debug.EntryPointMonitor} monitor An entry point monitor.
- */
-goog.debug.entryPointRegistry.monitorAll = function(monitor) {
-  goog.debug.entryPointRegistry.monitorsMayExist_ = true;
-  var transformer = goog.bind(monitor.wrap, monitor);
-  for (var i = 0; i < goog.debug.entryPointRegistry.refList_.length; i++) {
-    goog.debug.entryPointRegistry.refList_[i](transformer);
-  }
-  goog.debug.entryPointRegistry.monitors_.push(monitor);
-};
-
-
-/**
- * Try to unmonitor all the entry points that have already been registered. If
- * an entry point is registered in the future, it will not be wrapped by the
- * monitor when it is registered. Note that this may fail if the entry points
- * have additional wrapping.
- *
- * @param {!goog.debug.EntryPointMonitor} monitor The last monitor to wrap
- *     the entry points.
- * @throws {Error} If the monitor is not the most recently configured monitor.
- */
-goog.debug.entryPointRegistry.unmonitorAllIfPossible = function(monitor) {
-  var monitors = goog.debug.entryPointRegistry.monitors_;
-  goog.asserts.assert(monitor == monitors[monitors.length - 1],
-      'Only the most recent monitor can be unwrapped.');
-  var transformer = goog.bind(monitor.unwrap, monitor);
-  for (var i = 0; i < goog.debug.entryPointRegistry.refList_.length; i++) {
-    goog.debug.entryPointRegistry.refList_[i](transformer);
-  }
-  monitors.length--;
 };
 
 // Copyright 2013 The Closure Library Authors. All Rights Reserved.
@@ -12737,7 +12976,7 @@ olcs.core.OLImageryProvider.createCreditForSource = function(source) {
   var text = '';
   var attributions = source.getAttributions();
   if (!goog.isNull(attributions)) {
-    goog.array.forEach(attributions, function(el, i, arr) {
+    attributions.forEach(function(el) {
       // strip html tags (not supported in Cesium)
       text += el.getHTML().replace(/<\/?[^>]+(>|$)/g, '') + ' ';
     });
@@ -12750,7 +12989,7 @@ olcs.core.OLImageryProvider.createCreditForSource = function(source) {
     // "The text to be displayed on the screen if no imageUrl is specified."
     var logo = source.getLogo();
     if (goog.isDef(logo)) {
-      if (goog.isString(logo)) {
+      if (typeof logo == 'string') {
         imageUrl = logo;
       } else {
         imageUrl = logo.src;
@@ -12823,7 +13062,8 @@ olcs.core.computePixelSizeAtCoordinate = function(scene, target) {
   var camera = scene.camera;
   var canvas = scene.canvas;
   var frustum = camera.frustum;
-  var canvasDimensions = new Cesium.Cartesian2(canvas.width, canvas.height);
+  var canvasDimensions = new Cesium.Cartesian2(
+      canvas.clientWidth, canvas.clientHeight);
   var distance = Cesium.Cartesian3.magnitude(Cesium.Cartesian3.subtract(
       camera.position, target, new Cesium.Cartesian3()));
   var pixelSize = frustum.getPixelSize(canvasDimensions, distance);
@@ -12972,7 +13212,8 @@ olcs.core.pickOnTerrainOrEllipsoid = function(scene, pixel) {
  */
 olcs.core.pickBottomPoint = function(scene) {
   var canvas = scene.canvas;
-  var bottom = new Cesium.Cartesian2(canvas.width / 2, canvas.height);
+  var bottom = new Cesium.Cartesian2(
+      canvas.clientWidth / 2, canvas.clientHeight);
   return olcs.core.pickOnTerrainOrEllipsoid(scene, bottom);
 };
 
@@ -12985,7 +13226,9 @@ olcs.core.pickBottomPoint = function(scene) {
  */
 olcs.core.pickCenterPoint = function(scene) {
   var canvas = scene.canvas;
-  var center = new Cesium.Cartesian2(canvas.width / 2, canvas.height / 2);
+  var center = new Cesium.Cartesian2(
+      canvas.clientWidth / 2,
+      canvas.clientHeight / 2);
   return olcs.core.pickOnTerrainOrEllipsoid(scene, center);
 };
 
@@ -13151,7 +13394,7 @@ olcs.core.extentToRectangle = function(extent, projection) {
 /**
  * Creates Cesium.ImageryLayer best corresponding to the given ol.layer.Layer.
  * Only supports raster layers
- * @param {!ol.layer.Layer} olLayer
+ * @param {!ol.layer.Base} olLayer
  * @param {?ol.proj.Projection} viewProj Projection of the view.
  * @return {?Cesium.ImageryLayer} null if not possible (or supported)
  * @api
@@ -13206,9 +13449,9 @@ olcs.core.tileLayerToImageryLayer = function(olLayer, viewProj) {
 
 
 /**
- * Synchronizes the layer rendering properties (brightness, contrast, hue,
- * opacity, saturation, visible) to the given Cesium ImageryLayer.
- * @param {!ol.layer.Layer} olLayer
+ * Synchronizes the layer rendering properties (opacity, visible)
+ * to the given Cesium ImageryLayer.
+ * @param {!ol.layer.Base} olLayer
  * @param {!Cesium.ImageryLayer} csLayer
  * @api
  */
@@ -13220,31 +13463,6 @@ olcs.core.updateCesiumLayerProperties = function(olLayer, csLayer) {
   var visible = olLayer.getVisible();
   if (goog.isDef(visible)) {
     csLayer.show = visible;
-  }
-
-  // saturation and contrast are working ok
-  var saturation = olLayer.getSaturation();
-  if (goog.isDef(saturation)) {
-    csLayer.saturation = saturation;
-  }
-  var contrast = olLayer.getContrast();
-  if (goog.isDef(contrast)) {
-    csLayer.contrast = contrast;
-  }
-
-  // Cesium actually operates in YIQ space -> hard to emulate
-  // The following values are only a rough approximations:
-
-  // The hue in Cesium has different meaning than the OL equivalent.
-  // var hue = olLayer.getHue();
-  // if (goog.isDef(hue)) {
-  //   csLayer.hue = hue;
-  // }
-
-  var brightness = olLayer.getBrightness();
-  if (goog.isDef(brightness)) {
-    // rough estimation
-    csLayer.brightness = Math.pow(1 + parseFloat(brightness), 2);
   }
 };
 
@@ -13314,14 +13532,14 @@ olcs.core.olGeometryCloneTo4326 = function(geometry, projection) {
  */
 olcs.core.convertColorToCesium = function(olColor) {
   olColor = olColor || 'black';
-  if (goog.isArray(olColor)) {
+  if (Array.isArray(olColor)) {
     return new Cesium.Color(
         Cesium.Color.byteToFloat(olColor[0]),
         Cesium.Color.byteToFloat(olColor[1]),
         Cesium.Color.byteToFloat(olColor[2]),
         olColor[3]
     );
-  } else if (goog.isString(olColor)) {
+  } else if (typeof olColor == 'string') {
     return Cesium.Color.fromCssColorString(olColor);
   }
   goog.asserts.fail('impossible');
@@ -13676,10 +13894,17 @@ olcs.Camera.prototype.updateCamera_ = function() {
     carto.height = goog.isDef(height) ? height : 0;
   }
 
-  this.cam_.setView({
-    positionCartographic: carto,
+  var destination = Cesium.Ellipsoid.WGS84.cartographicToCartesian(carto);
+
+  /** @type {Cesium.optionsOrientation} */
+  var orientation = {
     pitch: this.tilt_ - Cesium.Math.PI_OVER_TWO,
-    heading: -this.view_.getRotation()
+    heading: -this.view_.getRotation(),
+    roll: undefined
+  };
+  this.cam_.setView({
+    destination: destination,
+    orientation: orientation
   });
 
   this.cam_.moveBackward(this.distance_);
@@ -13794,10 +14019,11 @@ olcs.Camera.prototype.updateView = function() {
  * @param {boolean=} opt_dontSync Do not synchronize the view.
  */
 olcs.Camera.prototype.checkCameraChange = function(opt_dontSync) {
-  var viewMatrix = this.cam_.viewMatrix;
-  if (!this.lastCameraViewMatrix_ ||
-      !this.lastCameraViewMatrix_.equals(viewMatrix)) {
-    this.lastCameraViewMatrix_ = viewMatrix.clone();
+  var old = this.lastCameraViewMatrix_;
+  var current = this.cam_.viewMatrix;
+
+  if (!old || !Cesium.Matrix4.equalsEpsilon(old, current, 1e-5)) {
+    this.lastCameraViewMatrix_ = current.clone();
     if (opt_dontSync !== true) {
       this.updateView();
     }
@@ -13818,7 +14044,7 @@ olcs.Camera.prototype.calcDistanceForResolution_ = function(resolution,
   var metersPerUnit = this.view_.getProjection().getMetersPerUnit();
 
   // number of "map units" visible in 2D (vertically)
-  var visibleMapUnits = resolution * canvas.height;
+  var visibleMapUnits = resolution * canvas.clientHeight;
 
   // The metersPerUnit does not take latitude into account, but it should
   // be lower with increasing latitude -- we have to compensate.
@@ -13861,7 +14087,7 @@ olcs.Camera.prototype.calcResolutionForDistance_ = function(distance,
   var visibleMeters = 2 * distance * Math.tan(fovy / 2);
   var relativeCircumference = Math.cos(Math.abs(latitude));
   var visibleMapUnits = visibleMeters / metersPerUnit / relativeCircumference;
-  var resolution = visibleMapUnits / canvas.height;
+  var resolution = visibleMapUnits / canvas.clientHeight;
 
   return resolution;
 };
@@ -14400,17 +14626,17 @@ olcs.DragBox.prototype.handleMouseDown = function(event) {
   var ray = this.scene_.camera.getPickRay(event.position);
   var intersection = this.scene_.globe.pick(ray, this.scene_);
   if (goog.isDef(intersection)) {
-    this.handler_.setInputAction(goog.bind(this.handleMouseMove, this),
+    this.handler_.setInputAction(this.handleMouseMove.bind(this),
         Cesium.ScreenSpaceEventType.MOUSE_MOVE);
-    this.handler_.setInputAction(goog.bind(this.handleMouseUp, this),
+    this.handler_.setInputAction(this.handleMouseUp.bind(this),
         Cesium.ScreenSpaceEventType.LEFT_UP);
 
     if (goog.isDef(this.modifier_)) {
       // listen to the event with and without the modifier to be able to start
       // a box with the key pressed and finish it without.
-      this.handler_.setInputAction(goog.bind(this.handleMouseMove, this),
+      this.handler_.setInputAction(this.handleMouseMove.bind(this),
           Cesium.ScreenSpaceEventType.MOUSE_MOVE, this.modifier_);
-      this.handler_.setInputAction(goog.bind(this.handleMouseUp, this),
+      this.handler_.setInputAction(this.handleMouseUp.bind(this),
           Cesium.ScreenSpaceEventType.LEFT_UP, this.modifier_);
     }
     var cartographic = ellipsoid.cartesianToCartographic(intersection);
@@ -14509,7 +14735,7 @@ olcs.DragBox.prototype.setScene = function(scene) {
   } else {
     goog.asserts.assert(scene.canvas);
     this.handler_ = new Cesium.ScreenSpaceEventHandler(scene.canvas);
-    this.handler_.setInputAction(goog.bind(this.handleMouseDown, this),
+    this.handler_.setInputAction(this.handleMouseDown.bind(this),
         Cesium.ScreenSpaceEventType.LEFT_DOWN, this.modifier_);
   }
   this.scene_ = scene;
@@ -14538,7 +14764,6 @@ olcs.DragBox.prototype.listen;
 
 goog.provide('olcs.FeatureConverter');
 
-goog.require('goog.array');
 goog.require('goog.asserts');
 goog.require('ol.extent');
 goog.require('ol.geom.SimpleGeometry');
@@ -14561,11 +14786,51 @@ olcs.FeatureConverter = function(scene) {
    * @protected
    */
   this.scene = scene;
+
+  /**
+   * Bind once to have a unique function for using as a listener
+   * @type {function(ol.source.VectorEvent)}
+   * @private
+   */
+  this.boundOnRemoveOrClearFeatureListener_ =
+      this.onRemoveOrClearFeature_.bind(this);
 };
 
 
 /**
- * @param {ol.layer.Vector} layer
+ * @param {ol.source.VectorEvent} evt
+ * @private
+ */
+olcs.FeatureConverter.prototype.onRemoveOrClearFeature_ = function(evt) {
+  var source = evt.target;
+  goog.asserts.assertInstanceof(source, ol.source.Vector);
+
+  var cancellers = source['olcs_cancellers'];
+  if (cancellers) {
+    var feature = evt.feature;
+    if (goog.isDef(feature)) {
+      // remove
+      var id = goog.getUid(feature);
+      var canceller = cancellers[id];
+      if (canceller) {
+        canceller();
+        delete cancellers[id];
+      }
+    } else {
+      // clear
+      for (var key in cancellers) {
+        if (cancellers.hasOwnProperty(key)) {
+          cancellers[key]();
+        }
+      }
+      source['olcs_cancellers'] = {};
+    }
+  }
+};
+
+
+/**
+ * @param {ol.layer.Vector|ol.layer.Image} layer
  * @param {!ol.Feature} feature Ol3 feature.
  * @param {!Cesium.Primitive|Cesium.Label|Cesium.Billboard} primitive
  * @protected
@@ -14580,8 +14845,9 @@ olcs.FeatureConverter.prototype.setReferenceForPicking =
 /**
  * Basics primitive creation using a color attribute.
  * Note that Cesium has 'interior' and outline geometries.
- * @param {ol.layer.Vector} layer
- * @param {!ol.Feature} feature Ol3 feature..
+ * @param {ol.layer.Vector|ol.layer.Image} layer
+ * @param {!ol.Feature} feature Ol3 feature.
+ * @param {!ol.geom.Geometry} olGeometry Ol3 geometry.
  * @param {!Cesium.Geometry} geometry
  * @param {!Cesium.Color} color
  * @param {number=} opt_lineWidth
@@ -14589,7 +14855,7 @@ olcs.FeatureConverter.prototype.setReferenceForPicking =
  * @protected
  */
 olcs.FeatureConverter.prototype.createColoredPrimitive =
-    function(layer, feature, geometry, color, opt_lineWidth) {
+    function(layer, feature, olGeometry, geometry, color, opt_lineWidth) {
   var createInstance = function(geometry, color) {
     return new Cesium.GeometryInstance({
       // always update Cesium externs before adding a property
@@ -14616,15 +14882,26 @@ olcs.FeatureConverter.prototype.createColoredPrimitive =
     }
     options.renderState.lineWidth = opt_lineWidth;
   }
-  var appearance = new Cesium.PerInstanceColorAppearance(options);
 
   var instances = createInstance(geometry, color);
 
-  var primitive = new Cesium.Primitive({
-    // always update Cesium externs before adding a property
-    geometryInstances: instances,
-    appearance: appearance
-  });
+  var heightReference = this.getHeightReference(layer, feature, olGeometry);
+
+  var primitive;
+
+  if (heightReference == Cesium.HeightReference.CLAMP_TO_GROUND) {
+    primitive = new Cesium.GroundPrimitive({
+      // always update Cesium externs before adding a property
+      geometryInstance: instances
+    });
+  } else {
+    var appearance = new Cesium.PerInstanceColorAppearance(options);
+    primitive = new Cesium.Primitive({
+      // always update Cesium externs before adding a property
+      geometryInstances: instances,
+      appearance: appearance
+    });
+  }
 
   this.setReferenceForPicking(layer, feature, primitive);
   return primitive;
@@ -14671,8 +14948,9 @@ olcs.FeatureConverter.prototype.extractLineWidthFromOlStyle =
 /**
  * Create a primitive collection out of two Cesium geometries.
  * Only the OpenLayers style colors will be used.
- * @param {ol.layer.Vector} layer
- * @param {!ol.Feature} feature Ol3 feature..
+ * @param {ol.layer.Vector|ol.layer.Image} layer
+ * @param {!ol.Feature} feature Ol3 feature.
+ * @param {!ol.geom.Geometry} olGeometry Ol3 geometry.
  * @param {!Cesium.Geometry} fillGeometry
  * @param {!Cesium.Geometry} outlineGeometry
  * @param {!ol.style.Style} olStyle
@@ -14680,21 +14958,22 @@ olcs.FeatureConverter.prototype.extractLineWidthFromOlStyle =
  * @protected
  */
 olcs.FeatureConverter.prototype.wrapFillAndOutlineGeometries =
-    function(layer, feature, fillGeometry, outlineGeometry, olStyle) {
+    function(layer, feature, olGeometry, fillGeometry, outlineGeometry,
+        olStyle) {
   var fillColor = this.extractColorFromOlStyle(olStyle, false);
   var outlineColor = this.extractColorFromOlStyle(olStyle, true);
 
   var primitives = new Cesium.PrimitiveCollection();
   if (olStyle.getFill()) {
-    var p = this.createColoredPrimitive(layer, feature, fillGeometry,
-        fillColor);
+    var p = this.createColoredPrimitive(layer, feature, olGeometry,
+        fillGeometry, fillColor);
     primitives.add(p);
   }
 
   if (olStyle.getStroke()) {
     var width = this.extractLineWidthFromOlStyle(olStyle);
-    var p = this.createColoredPrimitive(layer, feature, outlineGeometry,
-        outlineColor, width);
+    var p = this.createColoredPrimitive(layer, feature, olGeometry,
+        outlineGeometry, outlineColor, width);
     primitives.add(p);
   }
 
@@ -14706,7 +14985,7 @@ olcs.FeatureConverter.prototype.wrapFillAndOutlineGeometries =
 /**
  * Create a Cesium primitive if style has a text component.
  * Eventually return a PrimitiveCollection including current primitive.
- * @param {ol.layer.Vector} layer
+ * @param {ol.layer.Vector|ol.layer.Image} layer
  * @param {!ol.Feature} feature Ol3 feature..
  * @param {!ol.geom.Geometry} geometry
  * @param {!ol.style.Style} style
@@ -14743,7 +15022,7 @@ olcs.FeatureConverter.prototype.addTextStyle =
  * Overriding this wrapper allows manipulating the billboard options.
  * @param {!Cesium.BillboardCollection} billboards
  * @param {!Cesium.optionsBillboardCollectionAdd} bbOptions
- * @param {ol.layer.Vector} layer
+ * @param {ol.layer.Vector|ol.layer.Image} layer
  * @param {!ol.Feature} feature Ol3 feature.
  * @param {!ol.geom.Geometry} geometry
  * @param {!ol.style.Style} style
@@ -14760,7 +15039,7 @@ olcs.FeatureConverter.prototype.csAddBillboard =
 
 /**
  * Convert an OpenLayers circle geometry to Cesium.
- * @param {ol.layer.Vector} layer
+ * @param {ol.layer.Vector|ol.layer.Image} layer
  * @param {!ol.Feature} feature Ol3 feature..
  * @param {!ol.geom.Circle} olGeometry Ol3 circle geometry.
  * @param {!ol.proj.ProjectionLike} projection
@@ -14803,7 +15082,7 @@ olcs.FeatureConverter.prototype.olCircleGeometryToCesium =
   });
 
   var primitives = this.wrapFillAndOutlineGeometries(
-      layer, feature, fillGeometry, outlineGeometry, olStyle);
+      layer, feature, olGeometry, fillGeometry, outlineGeometry, olStyle);
 
   return this.addTextStyle(layer, feature, olGeometry, olStyle, primitives);
 };
@@ -14811,7 +15090,7 @@ olcs.FeatureConverter.prototype.olCircleGeometryToCesium =
 
 /**
  * Convert an OpenLayers line string geometry to Cesium.
- * @param {ol.layer.Vector} layer
+ * @param {ol.layer.Vector|ol.layer.Image} layer
  * @param {!ol.Feature} feature Ol3 feature..
  * @param {!ol.geom.LineString} olGeometry Ol3 line string geometry.
  * @param {!ol.proj.ProjectionLike} projection
@@ -14857,7 +15136,7 @@ olcs.FeatureConverter.prototype.olLineStringGeometryToCesium =
 
 /**
  * Convert an OpenLayers polygon geometry to Cesium.
- * @param {ol.layer.Vector} layer
+ * @param {ol.layer.Vector|ol.layer.Image} layer
  * @param {!ol.Feature} feature Ol3 feature..
  * @param {!ol.geom.Polygon} olGeometry Ol3 polygon geometry.
  * @param {!ol.proj.ProjectionLike} projection
@@ -14905,14 +15184,14 @@ olcs.FeatureConverter.prototype.olPolygonGeometryToCesium =
   });
 
   var primitives = this.wrapFillAndOutlineGeometries(
-      layer, feature, fillGeometry, outlineGeometry, olStyle);
+      layer, feature, olGeometry, fillGeometry, outlineGeometry, olStyle);
 
   return this.addTextStyle(layer, feature, olGeometry, olStyle, primitives);
 };
 
 
 /**
- * @param {ol.layer.Vector} layer
+ * @param {ol.layer.Vector|ol.layer.Image} layer
  * @param {ol.Feature} feature Ol3 feature..
  * @param {!ol.geom.Geometry} geometry
  * @return {!Cesium.HeightReference}
@@ -14947,9 +15226,9 @@ olcs.FeatureConverter.prototype.getHeightReference =
 
 /**
  * Convert a point geometry to a Cesium BillboardCollection.
- * @param {ol.layer.Vector} layer
+ * @param {ol.layer.Vector|ol.layer.Image} layer
  * @param {!ol.Feature} feature Ol3 feature..
- * @param {!ol.geom.Point} geometry
+ * @param {!ol.geom.Point} olGeometry Ol3 point geometry.
  * @param {!ol.proj.ProjectionLike} projection
  * @param {!ol.style.Style} style
  * @param {!Cesium.BillboardCollection} billboards
@@ -14959,73 +15238,91 @@ olcs.FeatureConverter.prototype.getHeightReference =
  * @api
  */
 olcs.FeatureConverter.prototype.olPointGeometryToCesium =
-    function(layer, feature, geometry, projection, style, billboards,
+    function(layer, feature, olGeometry, projection, style, billboards,
     opt_newBillboardCallback) {
-  goog.asserts.assert(geometry.getType() == 'Point');
-  geometry = olcs.core.olGeometryCloneTo4326(geometry, projection);
+  goog.asserts.assert(olGeometry.getType() == 'Point');
+  olGeometry = olcs.core.olGeometryCloneTo4326(olGeometry, projection);
 
   var imageStyle = style.getImage();
-  if (imageStyle instanceof ol.style.Icon) {
-    // make sure the image is scheduled for load
-    imageStyle.load();
-  }
-
-  var image = imageStyle.getImage(1); // get normal density
-  var isImageLoaded = function(image) {
-    return image.src != '' &&
-        image.naturalHeight != 0 &&
-        image.naturalWidth != 0 &&
-        image.complete;
-  };
-  var reallyCreateBillboard = goog.bind(function() {
-    if (goog.isNull(image)) {
-      return;
-    }
-    if (!(image instanceof HTMLCanvasElement ||
-        image instanceof Image ||
-        image instanceof HTMLImageElement)) {
-      return;
-    }
-    var center = geometry.getCoordinates();
-    var position = olcs.core.ol4326CoordinateToCesiumCartesian(center);
-    var color;
-    var opacity = imageStyle.getOpacity();
-    if (goog.isDef(opacity)) {
-      color = new Cesium.Color(1.0, 1.0, 1.0, opacity);
+  if (imageStyle) {
+    if (imageStyle instanceof ol.style.Icon) {
+      // make sure the image is scheduled for load
+      imageStyle.load();
     }
 
-    var heightReference = this.getHeightReference(layer, feature, geometry);
-
-    var bbOptions = /** @type {Cesium.optionsBillboardCollectionAdd} */ ({
-      // always update Cesium externs before adding a property
-      image: image,
-      color: color,
-      heightReference: heightReference,
-      verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-      position: position
-    });
-    var bb = this.csAddBillboard(billboards, bbOptions, layer, feature,
-        geometry, style);
-    if (opt_newBillboardCallback) {
-      opt_newBillboardCallback(bb);
-    }
-  }, this);
-
-  if (image instanceof Image && !isImageLoaded(image)) {
-    // Cesium requires the image to be loaded
-    var listener = function() {
-      if (!billboards.isDestroyed()) {
-        reallyCreateBillboard();
-      }
+    var image = imageStyle.getImage(1); // get normal density
+    var isImageLoaded = function(image) {
+      return image.src != '' &&
+          image.naturalHeight != 0 &&
+          image.naturalWidth != 0 &&
+          image.complete;
     };
+    var reallyCreateBillboard = (function() {
+      if (goog.isNull(image)) {
+        return;
+      }
+      if (!(image instanceof HTMLCanvasElement ||
+          image instanceof Image ||
+          image instanceof HTMLImageElement)) {
+        return;
+      }
+      var center = olGeometry.getCoordinates();
+      var position = olcs.core.ol4326CoordinateToCesiumCartesian(center);
+      var color;
+      var opacity = imageStyle.getOpacity();
+      if (goog.isDef(opacity)) {
+        color = new Cesium.Color(1.0, 1.0, 1.0, opacity);
+      }
 
-    goog.events.listenOnce(image, 'load', listener);
-  } else {
-    reallyCreateBillboard();
+      var heightReference = this.getHeightReference(layer, feature, olGeometry);
+
+      var bbOptions = /** @type {Cesium.optionsBillboardCollectionAdd} */ ({
+        // always update Cesium externs before adding a property
+        image: image,
+        color: color,
+        heightReference: heightReference,
+        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+        position: position
+      });
+      var bb = this.csAddBillboard(billboards, bbOptions, layer, feature,
+          olGeometry, style);
+      if (opt_newBillboardCallback) {
+        opt_newBillboardCallback(bb);
+      }
+    }).bind(this);
+
+    if (image instanceof Image && !isImageLoaded(image)) {
+      // Cesium requires the image to be loaded
+      var cancelled = false;
+      var source = layer.getSource();
+      if (source instanceof ol.source.ImageVector) {
+        source = source.getSource();
+      }
+      var canceller = function() {
+        cancelled = true;
+      };
+      source.on(['removefeature', 'clear'],
+          this.boundOnRemoveOrClearFeatureListener_);
+      source['olcs_cancellers'] = source['olcs_cancellers'] || {};
+
+      goog.asserts.assert(!source['olcs_cancellers'][goog.getUid(feature)]);
+      source['olcs_cancellers'][goog.getUid(feature)] = canceller;
+
+      var listener = function() {
+        if (!billboards.isDestroyed() && !cancelled) {
+          // Create billboard if the feature is still displayed on the map.
+          reallyCreateBillboard();
+        }
+      };
+
+      goog.events.listenOnce(image, 'load', listener);
+    } else {
+      reallyCreateBillboard();
+    }
   }
 
   if (style.getText()) {
-    return this.addTextStyle(layer, feature, geometry, style,
+    return this.addTextStyle(layer, feature, olGeometry, style,
         new Cesium.Primitive());
   } else {
     return null;
@@ -15035,7 +15332,7 @@ olcs.FeatureConverter.prototype.olPointGeometryToCesium =
 
 /**
  * Convert an OpenLayers multi-something geometry to Cesium.
- * @param {ol.layer.Vector} layer
+ * @param {ol.layer.Vector|ol.layer.Image} layer
  * @param {!ol.Feature} feature Ol3 feature..
  * @param {!ol.geom.Geometry} geometry Ol3 geometry.
  * @param {!ol.proj.ProjectionLike} projection
@@ -15055,7 +15352,7 @@ olcs.FeatureConverter.prototype.olMultiGeometryToCesium =
   // instead we create n primitives for simplicity.
   var accumulate = function(geometries, functor) {
     var primitives = new Cesium.PrimitiveCollection();
-    goog.array.forEach(geometries, function(geometry) {
+    geometries.forEach(function(geometry) {
       primitives.add(functor(layer, feature, geometry, projection, olStyle));
     });
     return primitives;
@@ -15068,7 +15365,7 @@ olcs.FeatureConverter.prototype.olMultiGeometryToCesium =
       subgeos = geometry.getPoints();
       if (olStyle.getText()) {
         var primitives = new Cesium.PrimitiveCollection();
-        goog.array.forEach(subgeos, function(geometry) {
+        subgeos.forEach(function(geometry) {
           goog.asserts.assert(geometry);
           var result = this.olPointGeometryToCesium(layer, feature, geometry,
               projection, olStyle, billboards, opt_newBillboardCallback);
@@ -15078,7 +15375,7 @@ olcs.FeatureConverter.prototype.olMultiGeometryToCesium =
         }.bind(this));
         return primitives;
       } else {
-        goog.array.forEach(subgeos, function(geometry) {
+        subgeos.forEach(function(geometry) {
           goog.asserts.assert(!goog.isNull(geometry));
           this.olPointGeometryToCesium(layer, feature, geometry, projection,
               olStyle, billboards, opt_newBillboardCallback);
@@ -15101,7 +15398,7 @@ olcs.FeatureConverter.prototype.olMultiGeometryToCesium =
 
 /**
  * Convert an OpenLayers text style to Cesium.
- * @param {ol.layer.Vector} layer
+ * @param {ol.layer.Vector|ol.layer.Image} layer
  * @param {!ol.Feature} feature Ol3 feature..
  * @param {!ol.geom.Geometry} geometry
  * @param {!ol.style.Text} style
@@ -15157,23 +15454,19 @@ olcs.FeatureConverter.prototype.olGeometry4326TextPartToCesium =
   }
   options.style = labelStyle;
 
-  if (style.getTextAlign()) {
-    var horizontalOrigin;
-    switch (style.getTextAlign()) {
-      case 'center':
-        horizontalOrigin = Cesium.HorizontalOrigin.CENTER;
-        break;
-      case 'left':
-        horizontalOrigin = Cesium.HorizontalOrigin.LEFT;
-        break;
-      case 'right':
-        horizontalOrigin = Cesium.HorizontalOrigin.RIGHT;
-        break;
-      default:
-        goog.asserts.fail('unhandled text align ' + style.getTextAlign());
-    }
-    options.horizontalOrigin = horizontalOrigin;
+  var horizontalOrigin;
+  switch (style.getTextAlign()) {
+    case 'left':
+      horizontalOrigin = Cesium.HorizontalOrigin.LEFT;
+      break;
+    case 'right':
+      horizontalOrigin = Cesium.HorizontalOrigin.RIGHT;
+      break;
+    case 'center':
+    default:
+      horizontalOrigin = Cesium.HorizontalOrigin.CENTER;
   }
+  options.horizontalOrigin = horizontalOrigin;
 
   if (style.getTextBaseline()) {
     var verticalOrigin;
@@ -15246,7 +15539,7 @@ olcs.FeatureConverter.prototype.olStyleToCesium =
 /**
  * Compute OpenLayers plain style.
  * Evaluates style function, blend arrays, get default style.
- * @param {ol.layer.Vector} layer
+ * @param {ol.layer.Vector|ol.layer.Image} layer
  * @param {!ol.Feature} feature
  * @param {ol.style.StyleFunction|undefined} fallbackStyle
  * @param {number} resolution
@@ -15269,7 +15562,7 @@ olcs.FeatureConverter.prototype.computePlainStyle =
     return null;
   }
 
-  goog.asserts.assert(goog.isArray(style));
+  goog.asserts.assert(Array.isArray(style));
   // FIXME combine materials as in cesium-materials-pack?
   // then this function must return a custom material
   // More simply, could blend the colors like described in
@@ -15280,7 +15573,7 @@ olcs.FeatureConverter.prototype.computePlainStyle =
 
 /**
  * Convert one OpenLayers feature up to a collection of Cesium primitives.
- * @param {ol.layer.Vector} layer
+ * @param {ol.layer.Vector|ol.layer.Image} layer
  * @param {!ol.Feature} feature Ol3 feature.
  * @param {!ol.style.Style} style
  * @param {!olcsx.core.OlFeatureToCesiumContext} context
@@ -15306,7 +15599,8 @@ olcs.FeatureConverter.prototype.olFeatureToCesium =
     case 'GeometryCollection':
       var primitives = new Cesium.PrimitiveCollection();
       var collection = /** @type {!ol.geom.GeometryCollection} */ (geom);
-      goog.array.forEach(collection.getGeometries(), function(geom) {
+      // TODO: use getGeometriesArray() instead
+      collection.getGeometries().forEach(function(geom) {
         if (geom) {
           var prims = this.olFeatureToCesium(layer, feature, style, context,
               geom);
@@ -15362,7 +15656,7 @@ olcs.FeatureConverter.prototype.olFeatureToCesium =
  * Convert an OpenLayers vector layer to Cesium primitive collection.
  * For each feature, the associated primitive will be stored in
  * `featurePrimitiveMap`.
- * @param {!ol.layer.Vector} olLayer
+ * @param {!(ol.layer.Vector|ol.layer.Image)} olLayer
  * @param {!ol.View} olView
  * @param {!Object.<number, !Cesium.Primitive>} featurePrimitiveMap
  * @return {!olcs.core.VectorLayerCounterpart}
@@ -15370,7 +15664,11 @@ olcs.FeatureConverter.prototype.olFeatureToCesium =
  */
 olcs.FeatureConverter.prototype.olVectorLayerToCesium =
     function(olLayer, olView, featurePrimitiveMap) {
-  var features = olLayer.getSource().getFeatures();
+  var source = olLayer.getSource();
+  if (source instanceof ol.source.ImageVector) {
+    source = source.getSource();
+  }
+  var features = source.getFeatures();
   var proj = olView.getProjection();
   var resolution = olView.getResolution();
 
@@ -15387,7 +15685,12 @@ olcs.FeatureConverter.prototype.olVectorLayerToCesium =
     if (!goog.isDefAndNotNull(feature)) {
       continue;
     }
-    var layerStyle = olLayer.getStyleFunction();
+    var layerStyle;
+    if (olLayer instanceof ol.layer.Image) {
+      layerStyle = olLayer.getSource().getStyleFunction();
+    } else {
+      layerStyle = olLayer.getStyleFunction();
+    }
     var style = this.computePlainStyle(olLayer, feature, layerStyle,
         resolution);
     if (!style) {
@@ -15406,7 +15709,7 @@ olcs.FeatureConverter.prototype.olVectorLayerToCesium =
 
 /**
  * Convert an OpenLayers feature to Cesium primitive collection.
- * @param {!ol.layer.Vector} layer
+ * @param {!(ol.layer.Vector|ol.layer.Image)} layer
  * @param {!ol.View} view
  * @param {!ol.Feature} feature
  * @param {!olcsx.core.OlFeatureToCesiumContext} context
@@ -15422,7 +15725,12 @@ olcs.FeatureConverter.prototype.convert =
     return null;
   }
 
-  var layerStyle = layer.getStyleFunction();
+  var layerStyle;
+  if (layer instanceof ol.layer.Image) {
+    layerStyle = layer.getSource().getStyleFunction();
+  } else {
+    layerStyle = layer.getStyleFunction();
+  }
   var style = this.computePlainStyle(layer, feature, layerStyle, resolution);
 
   if (!style) {
@@ -23422,57 +23730,68 @@ olcs.RasterSynchronizer.prototype.removeAllCesiumObjects = function(destroy) {
 
 
 /**
- * Creates a Cesium.ImageryLayer.
+ * Creates an array of Cesium.ImageryLayer.
  * May be overriden by child classes to implement custom behavior.
  * The default implementation handles tiled imageries in EPSG:4326 or
  * EPSG:3859.
- * @param {!ol.layer.Layer} olLayer
+ * @param {!ol.layer.Base} olLayer
  * @param {?ol.proj.Projection} viewProj Projection of the view.
- * @return {?Cesium.ImageryLayer} null if not possible (or supported)
+ * @return {?Array.<!Cesium.ImageryLayer>} array or null if not possible
+ * (or supported)
  * @protected
  */
-olcs.RasterSynchronizer.prototype.convertLayerToCesiumImagery =
-    olcs.core.tileLayerToImageryLayer;
+olcs.RasterSynchronizer.prototype.convertLayerToCesiumImageries =
+    function(olLayer, viewProj) {
+  var result = olcs.core.tileLayerToImageryLayer(olLayer, viewProj);
+  return result ? [result] : null;
+};
 
 
 /**
  * @inheritDoc
  */
-olcs.RasterSynchronizer.prototype.createSingleCounterpart = function(olLayer) {
+olcs.RasterSynchronizer.prototype.createSingleLayerCounterparts =
+    function(olLayer) {
   var viewProj = this.view.getProjection();
-  var cesiumObject = this.convertLayerToCesiumImagery(olLayer, viewProj);
-  if (!goog.isNull(cesiumObject)) {
-    olLayer.on(
-        ['change:brightness', 'change:contrast', 'change:hue',
-         'change:opacity', 'change:saturation', 'change:visible'],
+  var cesiumObjects = this.convertLayerToCesiumImageries(olLayer, viewProj);
+  if (!goog.isNull(cesiumObjects)) {
+    olLayer.on(['change:opacity', 'change:visible'],
         function(e) {
           // the compiler does not seem to be able to infer this
-          if (!goog.isNull(cesiumObject)) {
-            olcs.core.updateCesiumLayerProperties(olLayer, cesiumObject);
+          goog.asserts.assert(!goog.isNull(cesiumObjects));
+          for (var i = 0; i < cesiumObjects.length; ++i) {
+            olcs.core.updateCesiumLayerProperties(olLayer, cesiumObjects[i]);
           }
         });
-    olcs.core.updateCesiumLayerProperties(olLayer, cesiumObject);
+
+    for (var i = 0; i < cesiumObjects.length; ++i) {
+      olcs.core.updateCesiumLayerProperties(olLayer, cesiumObjects[i]);
+    }
 
     // there is no way to modify Cesium layer extent,
     // we have to recreate when ol3 layer extent changes:
     olLayer.on('change:extent', function(e) {
-      this.cesiumLayers_.remove(cesiumObject, true); // destroy
-      this.ourLayers_.remove(cesiumObject, false);
+      for (var i = 0; i < cesiumObjects.length; ++i) {
+        this.cesiumLayers_.remove(cesiumObjects[i], true); // destroy
+        this.ourLayers_.remove(cesiumObjects[i], false);
+      }
       delete this.layerMap[goog.getUid(olLayer)]; // invalidate the map entry
       this.synchronize();
     }, this);
 
     olLayer.on('change', function(e) {
       // when the source changes, re-add the layer to force update
-      var position = this.cesiumLayers_.indexOf(cesiumObject);
-      if (position >= 0) {
-        this.cesiumLayers_.remove(cesiumObject, false);
-        this.cesiumLayers_.add(cesiumObject, position);
+      for (var i = 0; i < cesiumObjects.length; ++i) {
+        var position = this.cesiumLayers_.indexOf(cesiumObjects[i]);
+        if (position >= 0) {
+          this.cesiumLayers_.remove(cesiumObjects[i], false);
+          this.cesiumLayers_.add(cesiumObjects[i], position);
+        }
       }
     }, this);
   }
 
-  return cesiumObject;
+  return Array.isArray(cesiumObjects) ? cesiumObjects : null;
 };
 
 
@@ -23483,10 +23802,23 @@ olcs.RasterSynchronizer.prototype.createSingleCounterpart = function(olLayer) {
  */
 olcs.RasterSynchronizer.prototype.orderLayers = function() {
   var layers = [];
-  var groups = [];
   var zIndices = {};
-  olcs.AbstractSynchronizer.flattenLayers(this.mapLayerGroup, layers, groups,
-      zIndices);
+  var fifo = [this.mapLayerGroup];
+
+  while (fifo.length > 0) {
+    var olLayer = fifo.splice(0, 1)[0];
+    layers.push(olLayer);
+    zIndices[goog.getUid(olLayer)] = olLayer.getZIndex();
+
+    if (olLayer instanceof ol.layer.Group) {
+      var sublayers = olLayer.getLayers();
+      if (goog.isDef(sublayers)) {
+        sublayers.forEach(function(el) {
+          fifo.push(el);
+        });
+      }
+    }
+  }
 
   goog.array.stableSort(layers, function(layer1, layer2) {
     return zIndices[goog.getUid(layer1)] - zIndices[goog.getUid(layer2)];
@@ -23494,9 +23826,9 @@ olcs.RasterSynchronizer.prototype.orderLayers = function() {
 
   layers.forEach(function(olLayer) {
     var olLayerId = goog.getUid(olLayer);
-    var cesiumObject = this.layerMap[olLayerId];
-    if (cesiumObject) {
-      this.raiseToTop(cesiumObject);
+    var cesiumObjects = this.layerMap[olLayerId];
+    if (cesiumObjects) {
+      cesiumObjects.forEach(this.raiseToTop, this);
     }
   }, this);
 };
@@ -23595,36 +23927,50 @@ olcs.VectorSynchronizer.prototype.removeAllCesiumObjects = function(destroy) {
 /**
  * @inheritDoc
  */
-olcs.VectorSynchronizer.prototype.createSingleCounterpart = function(olLayer) {
-  if (!(olLayer instanceof ol.layer.Vector)) {
+olcs.VectorSynchronizer.prototype.createSingleLayerCounterparts =
+    function(olLayer) {
+  if (!(olLayer instanceof ol.layer.Vector) &&
+      !(olLayer instanceof ol.layer.Image &&
+      olLayer.getSource() instanceof ol.source.ImageVector)) {
     return null;
   }
-  goog.asserts.assertInstanceof(olLayer, ol.layer.Vector);
+  goog.asserts.assertInstanceof(olLayer, ol.layer.Layer);
+
+  var source = olLayer.getSource();
+  if (olLayer.getSource() instanceof ol.source.ImageVector) {
+    source = olLayer.getSource().getSource();
+  }
+
+  goog.asserts.assertInstanceof(source, ol.source.Vector);
   goog.asserts.assert(!goog.isNull(this.view));
 
   var view = this.view;
-  var source = olLayer.getSource();
   var featurePrimitiveMap = {};
   var counterpart = this.converter.olVectorLayerToCesium(olLayer, view,
       featurePrimitiveMap);
   var csPrimitives = counterpart.getRootPrimitive();
   var olListenKeys = counterpart.olListenKeys;
 
+  csPrimitives.show = olLayer.getVisible();
+
   olListenKeys.push(olLayer.on('change:visible', function(e) {
     csPrimitives.show = olLayer.getVisible();
   }));
 
-  var onAddFeature = goog.bind(function(feature) {
-    goog.asserts.assertInstanceof(olLayer, ol.layer.Vector);
+  var onAddFeature = (function(feature) {
+    goog.asserts.assert(
+        (olLayer instanceof ol.layer.Vector) ||
+        (olLayer instanceof ol.layer.Image)
+    );
     var context = counterpart.context;
     var prim = this.converter.convert(olLayer, view, feature, context);
     if (prim) {
       featurePrimitiveMap[goog.getUid(feature)] = prim;
       csPrimitives.add(prim);
     }
-  }, this);
+  }).bind(this);
 
-  var onRemoveFeature = goog.bind(function(feature) {
+  var onRemoveFeature = (function(feature) {
     var geometry = feature.getGeometry();
     var id = goog.getUid(feature);
     if (!geometry || geometry.getType() == 'Point') {
@@ -23640,7 +23986,7 @@ olcs.VectorSynchronizer.prototype.createSingleCounterpart = function(olLayer) {
     if (goog.isDefAndNotNull(csPrimitive)) {
       csPrimitives.remove(csPrimitive);
     }
-  }, this);
+  }).bind(this);
 
   olListenKeys.push(source.on('addfeature', function(e) {
     goog.asserts.assert(goog.isDefAndNotNull(e.feature));
@@ -23659,13 +24005,14 @@ olcs.VectorSynchronizer.prototype.createSingleCounterpart = function(olLayer) {
     onAddFeature(feature);
   }, this));
 
-  return counterpart;
+  return counterpart ? [counterpart] : null;
 };
 
 goog.provide('olcs.OLCesium');
 
 goog.require('goog.async.AnimationDelay');
 goog.require('goog.dom');
+goog.require('olcs.AutoRenderLoop');
 goog.require('olcs.Camera');
 goog.require('olcs.RasterSynchronizer');
 goog.require('olcs.VectorSynchronizer');
@@ -23680,10 +24027,40 @@ goog.require('olcs.VectorSynchronizer');
 olcs.OLCesium = function(options) {
 
   /**
+   * @type {olcs.AutoRenderLoop}
+   * @private
+   */
+  this.autoRenderLoop_ = null;
+
+  /**
    * @type {!ol.Map}
    * @private
    */
   this.map_ = options.map;
+
+  /**
+   * @type {number}
+   * @private
+   */
+  this.resolutionScale_ = 1.0;
+
+  /**
+   * @type {number}
+   * @private
+   */
+  this.canvasClientWidth_ = 0.0;
+
+  /**
+   * @type {number}
+   * @private
+   */
+  this.canvasClientHeight_ = 0.0;
+
+  /**
+   * @type {boolean}
+   * @private
+   */
+  this.resolutionScaleChanged_ = true; // force resize
 
   var fillArea = 'position:absolute;top:0;left:0;width:100%;height:100%;';
 
@@ -23752,7 +24129,7 @@ olcs.OLCesium = function(options) {
 
   var sscc = this.scene_.screenSpaceCameraController;
   sscc.inertiaSpin = 0;
-  sscc.ineartiaTranslate = 0;
+  sscc.inertiaTranslate = 0;
   sscc.inertiaZoom = 0;
 
   sscc.tiltEventTypes.push({
@@ -23783,12 +24160,21 @@ olcs.OLCesium = function(options) {
   this.scene_.globe = this.globe_;
   this.scene_.skyAtmosphere = new Cesium.SkyAtmosphere();
 
+  this.dataSourceCollection_ = new Cesium.DataSourceCollection();
+  this.dataSourceDisplay_ = new Cesium.DataSourceDisplay({
+    scene: this.scene_,
+    dataSourceCollection: this.dataSourceCollection_
+  });
+
   var synchronizers = goog.isDef(options.createSynchronizers) ?
       options.createSynchronizers(this.map_, this.scene_) :
       [
         new olcs.RasterSynchronizer(this.map_, this.scene_),
         new olcs.VectorSynchronizer(this.map_, this.scene_)
       ];
+
+  // Assures correct canvas size after initialisation
+  this.handleResize_();
 
   for (var i = synchronizers.length - 1; i >= 0; --i) {
     synchronizers[i].synchronize();
@@ -23802,13 +24188,13 @@ olcs.OLCesium = function(options) {
     }
   }
 
-  this.camera_.readFromView();
-
   this.cesiumRenderingDelay_ = new goog.async.AnimationDelay(function(time) {
     if (!this.blockCesiumRendering_) {
+      var julianDate = Cesium.JulianDate.now();
       this.scene_.initializeFrame();
       this.handleResize_();
-      this.scene_.render();
+      this.dataSourceDisplay_.update(julianDate);
+      this.scene_.render(julianDate);
       this.enabled_ && this.camera_.checkCameraChange();
     }
     this.cesiumRenderingDelay_.start();
@@ -23828,9 +24214,20 @@ olcs.OLCesium.prototype.handleResize_ = function() {
   var width = this.canvas_.clientWidth;
   var height = this.canvas_.clientHeight;
 
-  if (this.canvas_.width === width && this.canvas_.height === height) {
+  if (width === this.canvasClientWidth_ &&
+      height === this.canvasClientHeight_ &&
+      !this.resolutionScaleChanged_) {
     return;
   }
+
+  var zoomFactor = (window.devicePixelRatio || 1.0) * this.resolutionScale_;
+  this.resolutionScaleChanged_ = false;
+
+  this.canvasClientWidth_ = width;
+  this.canvasClientHeight_ = height;
+
+  width *= zoomFactor;
+  height *= zoomFactor;
 
   this.canvas_.width = width;
   this.canvas_.height = height;
@@ -23862,6 +24259,15 @@ olcs.OLCesium.prototype.getOlMap = function() {
  */
 olcs.OLCesium.prototype.getCesiumScene = function() {
   return this.scene_;
+};
+
+
+/**
+ * @return {!Cesium.DataSourceCollection}
+ * @api
+ */
+olcs.OLCesium.prototype.getDataSources = function() {
+  return this.dataSourceCollection_;
 };
 
 
@@ -23908,9 +24314,9 @@ olcs.OLCesium.prototype.setEnabled = function(enable) {
   } else {
     if (this.isOverMap_) {
       var interactions = this.map_.getInteractions();
-      goog.array.forEach(this.pausedInteractions_, function(el, i, arr) {
-        interactions.push(el);
-      }, this);
+      this.pausedInteractions_.forEach(function(interaction) {
+        interactions.push(interaction);
+      });
       this.pausedInteractions_.length = 0;
 
       if (!goog.isNull(this.hiddenRootGroup_)) {
@@ -23961,6 +24367,57 @@ olcs.OLCesium.prototype.setBlockCesiumRendering = function(block) {
   this.blockCesiumRendering_ = block;
 };
 
+
+/**
+ * Render the globe only when necessary in order to save resources.
+ * Experimental.
+ * @api
+ */
+olcs.OLCesium.prototype.enableAutoRenderLoop = function() {
+  if (!this.autoRenderLoop_) {
+    this.autoRenderLoop_ = new olcs.AutoRenderLoop(this, false);
+  }
+};
+
+
+/**
+ * Get the autorender loop.
+ * @return {?olcs.AutoRenderLoop}
+ * @api
+*/
+olcs.OLCesium.prototype.getAutoRenderLoop = function() {
+  return this.autoRenderLoop_;
+};
+
+
+/**
+ * The 3D Cesium globe is rendered in a canvas with two different dimensions:
+ * clientWidth and clientHeight which are the dimension on the screen and
+ * width and height which are the dimensions of the drawing buffer.
+ *
+ * By using a resolution scale lower than 1.0, it is possible to render the
+ * globe in a buffer smaller than the canvas client dimensions and improve
+ * performance, at the cost of quality.
+ *
+ * Pixel ratio should also be taken into account; by default, a device with
+ * pixel ratio of 2.0 will have a buffer surface 4 times bigger than the client
+ * surface.
+ *
+ * @param {number} value
+ * @this {olcs.OLCesium}
+ * @api
+ */
+olcs.OLCesium.prototype.setResolutionScale = function(value) {
+  value = Math.max(0, value);
+  if (value !== this.resolutionScale_) {
+    this.resolutionScale_ = Math.max(0, value);
+    this.resolutionScaleChanged_ = true;
+    if (this.autoRenderLoop_) {
+      this.autoRenderLoop_.restartRenderLoop();
+    }
+  }
+};
+
 // Copyright 2009 The Closure Library Authors.
 // All Rights Reserved.
 //
@@ -23989,6 +24446,7 @@ goog.addDependency('demos/editor/helloworlddialogplugin.js', ['goog.demos.editor
  */
 
 goog.require('olcs.AbstractSynchronizer');
+goog.require('olcs.AutoRenderLoop');
 goog.require('olcs.Camera');
 goog.require('olcs.DragBox');
 goog.require('olcs.DragBoxEventType');
@@ -24008,6 +24466,16 @@ goog.exportProperty(
     olcs.AbstractSynchronizer.prototype,
     'synchronize',
     olcs.AbstractSynchronizer.prototype.synchronize);
+
+goog.exportProperty(
+    olcs.AutoRenderLoop.prototype,
+    'restartRenderLoop',
+    olcs.AutoRenderLoop.prototype.restartRenderLoop);
+
+goog.exportProperty(
+    olcs.AutoRenderLoop.prototype,
+    'setDebug',
+    olcs.AutoRenderLoop.prototype.setDebug);
 
 goog.exportSymbol(
     'olcs.Camera',
@@ -24281,6 +24749,11 @@ goog.exportProperty(
 
 goog.exportProperty(
     olcs.OLCesium.prototype,
+    'getDataSources',
+    olcs.OLCesium.prototype.getDataSources);
+
+goog.exportProperty(
+    olcs.OLCesium.prototype,
     'getEnabled',
     olcs.OLCesium.prototype.getEnabled);
 
@@ -24298,6 +24771,21 @@ goog.exportProperty(
     olcs.OLCesium.prototype,
     'setBlockCesiumRendering',
     olcs.OLCesium.prototype.setBlockCesiumRendering);
+
+goog.exportProperty(
+    olcs.OLCesium.prototype,
+    'enableAutoRenderLoop',
+    olcs.OLCesium.prototype.enableAutoRenderLoop);
+
+goog.exportProperty(
+    olcs.OLCesium.prototype,
+    'getAutoRenderLoop',
+    olcs.OLCesium.prototype.getAutoRenderLoop);
+
+goog.exportProperty(
+    olcs.OLCesium.prototype,
+    'setResolutionScale',
+    olcs.OLCesium.prototype.setResolutionScale);
 
 goog.exportSymbol(
     'olcs.RasterSynchronizer',
