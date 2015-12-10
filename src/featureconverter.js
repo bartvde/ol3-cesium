@@ -515,6 +515,7 @@ olcs.FeatureConverter.prototype.olPointGeometryToCesium =
       var bbOptions = /** @type {Cesium.optionsBillboardCollectionAdd} */ ({
         // always update Cesium externs before adding a property
         image: image,
+        scale: imageStyle.getScale(),
         color: color,
         heightReference: heightReference,
         verticalOrigin: Cesium.VerticalOrigin.BOTTOM,

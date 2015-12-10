@@ -1,6 +1,6 @@
 // Ol3-Cesium. See https://github.com/openlayers/ol3-cesium/
 // License: https://github.com/openlayers/ol3-cesium/blob/master/LICENSE
-// Version: v1.8-94-g12deda0
+// Version: v1.9-35-g9f5eda5
 
 var CLOSURE_NO_DEPS = true;
 // Copyright 2006 The Closure Library Authors. All Rights Reserved.
@@ -15279,6 +15279,7 @@ olcs.FeatureConverter.prototype.olPointGeometryToCesium =
       var bbOptions = /** @type {Cesium.optionsBillboardCollectionAdd} */ ({
         // always update Cesium externs before adding a property
         image: image,
+        scale: imageStyle.getScale(),
         color: color,
         heightReference: heightReference,
         verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
