@@ -1,6 +1,6 @@
 // Ol3-Cesium. See https://github.com/openlayers/ol3-cesium/
 // License: https://github.com/openlayers/ol3-cesium/blob/master/LICENSE
-// Version: v1.9-35-g9f5eda5
+// Version: v1.9-36-g802db65
 
 var CLOSURE_NO_DEPS = true;
 // Copyright 2006 The Closure Library Authors. All Rights Reserved.
@@ -15558,7 +15558,7 @@ olcs.FeatureConverter.prototype.computePlainStyle =
     style = fallbackStyle(feature, resolution);
   }
 
-  if (!goog.isDef(style)) {
+  if (!goog.isDefAndNotNull(style)) {
     // The feature must not be displayed
     return null;
   }

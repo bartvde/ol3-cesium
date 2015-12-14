@@ -794,7 +794,7 @@ olcs.FeatureConverter.prototype.computePlainStyle =
     style = fallbackStyle(feature, resolution);
   }
 
-  if (!goog.isDef(style)) {
+  if (!goog.isDefAndNotNull(style)) {
     // The feature must not be displayed
     return null;
   }
