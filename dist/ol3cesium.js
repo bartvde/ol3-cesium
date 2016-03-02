@@ -1,6 +1,6 @@
 // Ol3-Cesium. See https://github.com/openlayers/ol3-cesium/
 // License: https://github.com/openlayers/ol3-cesium/blob/master/LICENSE
-// Version: v1.9-36-g802db65
+// Version: v1.9-38-g9bb5e32
 
 (function (root, factory) {
   if (typeof exports === "object") {
@@ -77,7 +77,7 @@ this.V.bind(this));default:Ca("Unhandled multi geometry type"+c.getType())}};
 k.fa=function(a,b,c,d){var e=d.getText(),f=new Cesium.LabelCollection({scene:this.scene}),g=ol.extent.getCenter(c.getExtent());if(c instanceof ol.geom.SimpleGeometry){var h=c.getFirstCoordinate();g[2]=3==h.length?h[2]:0}h={};h.position=R(g);h.text=e;h.heightReference=this.N(a,b,c);c=d.getOffsetX();e=d.getOffsetY();0!=c&&0!=e&&(c=new Cesium.Cartesian2(c,e),h.pixelOffset=c);c=d.getFont();null!=c&&(h.font=c);c=void 0;d.getFill()&&(h.fillColor=X(d,!1),c=Cesium.LabelStyle.FILL);d.getStroke()&&(h.outlineWidth=
 Sb(this,d),h.outlineColor=X(d,!0),c=Cesium.LabelStyle.OUTLINE);d.getFill()&&d.getStroke()&&(c=Cesium.LabelStyle.FILL_AND_OUTLINE);h.style=c;switch(d.getTextAlign()){case "left":c=Cesium.HorizontalOrigin.LEFT;break;case "right":c=Cesium.HorizontalOrigin.RIGHT;break;default:c=Cesium.HorizontalOrigin.CENTER}h.horizontalOrigin=c;if(d.getTextBaseline()){var l;switch(d.getTextBaseline()){case "top":l=Cesium.VerticalOrigin.TOP;break;case "middle":l=Cesium.VerticalOrigin.CENTER;break;case "bottom":l=Cesium.VerticalOrigin.BOTTOM;
 break;case "alphabetic":l=Cesium.VerticalOrigin.TOP;break;case "hanging":l=Cesium.VerticalOrigin.BOTTOM;break;default:d.getTextBaseline()}h.verticalOrigin=l}d=f.add(h);d.olLayer=a;d.olFeature=b;return f};k.ha=function(a,b,c){a=b.getFill();b=b.getStroke();if(c&&!b||!c&&!a)return null;a=c?b.getColor():a.getColor();a=Ib(a);return c&&b.getLineDash()?Cesium.Material.fromType("Stripe",{horizontal:!1,repeat:500,evenColor:a,oddColor:new Cesium.Color(0,0,0,0)}):Cesium.Material.fromType("Color",{color:a})};
-k.S=function(a,b,c,d){a=b.getStyleFunction();var e;n(a)&&(e=a.call(b,d));null==e&&null!=c&&(e=c(b,d));return null!=e?e[0]:null};
+k.S=function(a,b,c,d){a=b.getStyleFunction();var e=null;a&&(e=a.call(b,d));!e&&c&&(e=c(b,d));return e?Array.isArray(e)?e[0]:e:null};
 k.P=function(a,b,c,d,e){function f(a){d.featureToCesiumMap[t(b)]=a}e=e||b.getGeometry();var g=d.projection;if(!e)return null;switch(e.getType()){case "GeometryCollection":var h=new Cesium.PrimitiveCollection;e.getGeometries().forEach(function(e){e&&(e=this.P(a,b,c,d,e))&&h.add(e)}.bind(this));return h;case "Point":return(e=this.R(a,b,e,g,c,d.billboards,f))?e:null;case "Circle":return this.ea(a,b,e,g,c);case "LineString":return this.U(a,b,e,g,c);case "Polygon":return this.V(a,b,e,g,c);case "MultiPoint":case "MultiLineString":case "MultiPolygon":return(e=
 this.ga(a,b,e,g,c,d.billboards,f))?e:null;case "LinearRing":throw Error("LinearRing should only be part of polygon.");default:throw Error("Ol geom type not handled : "+e.getType());}};
 k.ia=function(a,b,c){var d=a.getSource();d instanceof ol.source.ImageVector&&(d=d.getSource());var d=d.getFeatures(),e=b.getProjection();b=b.getResolution();if(!n(b)||!e)throw Error("View not ready");for(var e=new Ob(e,this.scene),f=e.c,g=0;g<d.length;++g){var h=d[g];if(null!=h){var l;a instanceof ol.layer.Image?l=a.getSource().getStyleFunction():l=a.getStyleFunction();var r=this.S(0,h,l,b);r&&(r=this.P(a,h,r,f))&&(c[t(h)]=r,e.a.add(r))}}return e};
