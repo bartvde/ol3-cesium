@@ -1,6 +1,6 @@
 // Ol3-Cesium. See https://github.com/openlayers/ol3-cesium/
 // License: https://github.com/openlayers/ol3-cesium/blob/master/LICENSE
-// Version: v1.9-38-g9bb5e32
+// Version: v1.9-39-g2619a3e
 
 var CLOSURE_NO_DEPS = true;
 // Copyright 2006 The Closure Library Authors. All Rights Reserved.
@@ -23818,19 +23818,18 @@ olcs.RasterSynchronizer.prototype.createSingleLayerCounterparts =
 olcs.RasterSynchronizer.prototype.orderLayers = function() {
   var layers = [];
   var zIndices = {};
-  var fifo = [this.mapLayerGroup];
+  var queue = [this.mapLayerGroup];
 
-  while (fifo.length > 0) {
-    var olLayer = fifo.splice(0, 1)[0];
+  while (queue.length > 0) {
+    var olLayer = queue.splice(0, 1)[0];
     layers.push(olLayer);
     zIndices[goog.getUid(olLayer)] = olLayer.getZIndex();
 
     if (olLayer instanceof ol.layer.Group) {
       var sublayers = olLayer.getLayers();
-      if (goog.isDef(sublayers)) {
-        sublayers.forEach(function(el) {
-          fifo.push(el);
-        });
+      if (sublayers) {
+        // Prepend queue with sublayers in order
+        queue.unshift.apply(queue, sublayers.getArray());
       }
     }
   }
